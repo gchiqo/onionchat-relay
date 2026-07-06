@@ -1,0 +1,19 @@
+# Gradle / build
+.gradle/
+build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Kotlin
+.kotlin/
+
+# Relay runtime state (Tor data, onion keys, caches) — must never be committed
+relay-data/
+
+# CLI local state, if run from the repo
+.onionchat-cli/
+
+# IDE / OS
+.idea/
+*.iml
+.DS_Store

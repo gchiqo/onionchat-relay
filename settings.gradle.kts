@@ -10,3 +10,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "onionchat-relay"
+include(":core", ":relay", ":cli")
