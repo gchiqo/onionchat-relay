@@ -29,9 +29,66 @@ in a sealed box to the recipient's X25519 key. The opaque bytes go to the relay 
 until the recipient reconnects). The recipient opens the box and verifies the signature —
 `Seal(Sign(message))`. See `core/.../protocol` and the thesis for details.
 
-## Build
+## Install the terminal client (Linux · Windows · macOS · Termux · FreeBSD)
 
-Requires a JDK 21+. Everything is offline-friendly once dependencies are cached.
+The terminal client is a JVM program, so it runs on any platform with **Java 17+**.
+It talks to the Android app over the same relay, so terminal↔terminal, terminal↔phone
+and phone↔phone all interoperate.
+
+### Option A — download a release (no build)
+
+1. Grab `onionchat-<version>.zip` from the repo's **Releases** page and unzip it.
+2. Make sure a JRE 17+ is installed:
+   - Linux (Debian/Ubuntu): `sudo apt install openjdk-17-jre`
+   - macOS: `brew install openjdk@17`
+   - Windows: install Temurin 17 from adoptium.net
+   - Termux (Android): `pkg install openjdk-17`
+   - FreeBSD: `pkg install openjdk17`
+3. Run it:
+   - Linux / macOS / Termux / FreeBSD: `./onionchat-<version>/bin/onionchat --help`
+   - Windows: `onionchat-<version>\bin\onionchat.bat --help`
+
+### Option B — build from the repo
+
+```bash
+git clone https://github.com/gchiqo/onionchat-relay
+cd onionchat-relay
+./gradlew :cli:installDist              # -> cli/build/install/onionchat/bin/onionchat
+```
+
+## Talk over Tor (terminal ↔ app)
+
+The client reaches the relay's `.onion` through a **Tor SOCKS proxy**. Any Tor works —
+you just point `--socks` at it (default `127.0.0.1:9050`).
+
+Get a Tor SOCKS proxy on each platform:
+
+| Platform | Get Tor | SOCKS port |
+|----------|---------|-----------|
+| Linux    | `sudo apt install tor && sudo systemctl start tor` | `9050` |
+| macOS    | `brew install tor && tor` | `9050` |
+| Windows  | run Tor Browser (leave it open) | `9150` |
+| Termux   | `pkg install tor && tor` | `9050` |
+| FreeBSD  | `pkg install tor && service tor onestart` | `9050` |
+
+Then connect to the same relay onion the phones use:
+
+```bash
+# Linux/macOS/Termux/FreeBSD (system tor on 9050):
+onionchat --relay <relay-address>.onion --handle alice
+
+# Windows / Tor Browser (SOCKS on 9150):
+onionchat --relay <relay-address>.onion --socks 127.0.0.1:9150 --handle alice
+```
+
+Share your `/me` line with your peer (or scan/copy from the app), and chat. Because
+the relay is untrusted and every message is an end-to-end sealed box, the network path
+over Tor is the only thing between endpoints — no server can read the conversation.
+
+## Build & test (developers)
+
+Requires a JDK 21 to build (the client runtime only needs 17). Offline-friendly once
+dependencies are cached.
 
 ```bash
 ./gradlew build            # compile everything + run :core unit tests

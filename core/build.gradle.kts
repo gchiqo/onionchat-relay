@@ -23,6 +23,13 @@ tasks.test {
     testLogging { events("passed", "failed", "skipped") }
 }
 
+// Emit Java 17 bytecode so the shared core (and the CLI built on it) runs on
+// any JRE 17+ — desktops, Termux (openjdk-17), FreeBSD (openjdk17). Compiles with
+// whatever JDK (17+) runs Gradle; no toolchain provisioning required.
 kotlin {
-    jvmToolchain(21)
+    compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) }
+}
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
