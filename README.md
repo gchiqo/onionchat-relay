@@ -85,6 +85,49 @@ Share your `/me` line with your peer (or scan/copy from the app), and chat. Beca
 the relay is untrusted and every message is an end-to-end sealed box, the network path
 over Tor is the only thing between endpoints — no server can read the conversation.
 
+## Terminal ↔ phone with no separate relay (`--host`)
+
+With `--host`, the client you start hosts everything **in its own process** on **its own
+identity onion** — so it needs no separate relay, and its QR is both "where to reach me"
+and "who I am." This is the clean terminal-hosts / phone-connects flow.
+
+```bash
+# torrc needs:  ControlPort 9051   and   CookieAuthentication 1
+onionchat --host --handle alice
+```
+
+It prints your identity onion **and a scannable QR** right in the terminal:
+
+```
+  HOSTING in THIS process — no separate relay needed.
+  Peers connect with:   --relay <your-identity>.onion
+  Phone: scan this QR, set it as the Relay address, then Connect:
+   █▀▀▀▀▀█ ▄▀ ▄ █▀▀▀▀▀█
+   █ ███ █ ▀█▄ █ ███ █      ← scan this with the OnionChat app
+   ...
+```
+
+**On the phone:** install the APK, set a handle, open the QR scanner and scan the
+terminal's QR (this adds the terminal as a contact), paste that same onion into the
+**Relay .onion address** field, and Connect. Now type — messages flow both ways over the
+one Tor connection. The terminal learns the phone automatically from its first message.
+
+Show your QR again any time with `/qr`.
+
+### LAN / offline demo (no Tor)
+
+```bash
+onionchat --host --local 9999 --handle alice     # hosts on 127.0.0.1:9999
+onionchat --relay 127.0.0.1:9999 --handle bob     # another terminal, same machine / LAN
+```
+
+### Notes
+- The hosting client is still a normal peer with its own identity — it just also routes.
+  Offline messages queue on the host and deliver when the peer reconnects.
+- Hosting uses `ADD_ONION` on Tor's control port with your identity key, so **no bundled
+  tor binary is needed** — it works anywhere Tor runs, including Termux and FreeBSD, and
+  the hosted onion equals your identity address.
+
 ## Build & test (developers)
 
 Requires a JDK 21 to build (the client runtime only needs 17). Offline-friendly once

@@ -5,11 +5,16 @@ import com.chiko.onionchat.crypto.SealedBox
 import com.chiko.onionchat.model.Contact
 import com.chiko.onionchat.protocol.MessageCodec
 import com.chiko.onionchat.protocol.RelayProtocol
+import com.chiko.onionchat.relay.RelayServer
 import org.bouncycastle.util.encoders.Base64
 import java.io.File
+import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Proxy
+import java.net.ServerSocket
 import java.net.Socket
+import java.security.MessageDigest
+import kotlin.system.exitProcess
 
 /**
  * OnionChat terminal client.
@@ -40,6 +45,11 @@ private data class Options(
     val socksHost: String,
     val socksPort: Int,
     val handleOverride: String?,
+    val host: Boolean,        // run the relay in this process ("nothing else needed")
+    val localPort: Int?,      // host without Tor on this TCP port (LAN/testing); null = publish onion
+    val controlHost: String,
+    val controlPort: Int,
+    val controlPassword: String?,
 ) {
     companion object {
         fun parse(args: Array<String>): Options {
@@ -48,19 +58,36 @@ private data class Options(
             var socksHost = "127.0.0.1"
             var socksPort = 9050
             var handle: String? = null
+            var host = false
+            var localPort: Int? = null
+            var controlHost = "127.0.0.1"
+            var controlPort = 9051
+            var controlPassword: String? = null
             var i = 0
             while (i < args.size) {
                 when (args[i]) {
                     "--data"   -> args.getOrNull(++i)?.let { dataDir = File(it) }
                     "--relay"  -> relay = args.getOrNull(++i)
                     "--handle" -> handle = args.getOrNull(++i)
+                    "--host"   -> host = true
+                    "--local"  -> {
+                        // optional following port; default to the well-known virtual port
+                        val next = args.getOrNull(i + 1)?.toIntOrNull()
+                        localPort = next ?: 9999
+                        if (next != null) i++
+                        host = true
+                    }
+                    "--control" -> args.getOrNull(++i)?.let {
+                        val (h, p) = it.splitHostPort(9051); controlHost = h; controlPort = p
+                    }
+                    "--control-password" -> controlPassword = args.getOrNull(++i)
                     "--socks"  -> args.getOrNull(++i)?.let {
                         val (h, p) = it.splitHostPort(9050); socksHost = h; socksPort = p
                     }
                 }
                 i++
             }
-            return Options(dataDir, relay, socksHost, socksPort, handle)
+            return Options(dataDir, relay, socksHost, socksPort, handle, host, localPort, controlHost, controlPort, controlPassword)
         }
     }
 }
@@ -77,21 +104,85 @@ private class Cli(private val opts: Options) {
     @Volatile private var running = true
     private var activePeer: String? = contacts.keys.firstOrNull()
 
+    // effective relay address (may be set by --host to our own in-process relay)
+    private var relay: String? = opts.relay
+    @Volatile private var torControl: TorControl? = null
+
     fun run() {
         opts.handleOverride?.let { store.handle = it }
+        if (opts.host) startHost()
         printBanner()
-        if (opts.relay != null) {
+        if (relay != null) {
             Thread(::connectLoop, "relay-conn").apply { isDaemon = true; start() }
         } else {
-            sys("no --relay given: offline mode (identity only, cannot send/receive)")
+            sys("no --relay/--host given: offline mode (identity only, cannot send/receive)")
         }
         commandLoop()
     }
 
+    // ---------------- host mode (run the relay in-process) ----------------
+
+    private fun startHost() {
+        val server = ServerSocket(opts.localPort ?: 0, 128, InetAddress.getLoopbackAddress())
+        val port = server.localPort
+        Thread({ RelayServer { line -> hostLog(line) }.serve(server) }, "relay-host")
+            .apply { isDaemon = true; start() }
+
+        val overTor = opts.localPort == null
+        val advertised = if (!overTor) {
+            "127.0.0.1:$port"            // no Tor: reachable on this machine / LAN
+        } else {
+            try {
+                sys("publishing your identity onion via Tor control (${opts.controlHost}:${opts.controlPort})…")
+                val tc = TorControl.connect(opts.controlHost, opts.controlPort, opts.controlPassword)
+                torControl = tc
+                // host on the identity key, so the hosted onion IS our identity —
+                // one QR is both "where to reach me" and "who I am".
+                val onion = tc.publishOnion(RelayServer.VIRTUAL_PORT, port, torIdentityKeyBlob())
+                if (onion != identity.onionAddress)
+                    sys("warning: hosted onion ($onion) != identity (${identity.onionAddress})")
+                onion
+            } catch (e: Exception) {
+                sys("could not publish onion: ${e.message}")
+                sys("enable Tor's control port (torrc: 'ControlPort 9051' + 'CookieAuthentication 1'),")
+                sys("or host without Tor for LAN/testing: onionchat --host --local 9999")
+                exitProcess(2)
+            }
+        }
+        relay = "127.0.0.1:$port"        // we reach our own relay directly over loopback
+        println("==============================================================")
+        println("  HOSTING in THIS process — no separate relay needed.")
+        println("  Peers connect with:   --relay $advertised")
+        println(if (overTor) "  (this is your identity onion, reachable over Tor — keep running)"
+                else "  (local mode: reachable on this machine/LAN, no Tor)")
+        println("==============================================================")
+        if (overTor) {
+            println("  Phone: scan this QR, set it as the Relay address, then Connect:")
+            showQr()
+        }
+    }
+
+    /** Tor ED25519-V3 key spec derived from our identity seed (so onion == identity). */
+    private fun torIdentityKeyBlob(): String {
+        val h = MessageDigest.getInstance("SHA-512").digest(identity.exportSeed())  // 64 bytes
+        h[0] = (h[0].toInt() and 248).toByte()
+        h[31] = ((h[31].toInt() and 63) or 64).toByte()
+        return "ED25519-V3:" + Base64.toBase64String(h)   // clamped a(32) || RH(32)
+    }
+
+    private fun myQrPayload() = QrTerminal.contactPayload(identity.onionAddress, handle, myX25519())
+
+    private fun showQr() {
+        println(QrTerminal.render(myQrPayload()))
+        println("  ${identity.onionAddress}")
+    }
+
+    private fun hostLog(line: String) { println("\n· relay $line"); prompt() }
+
     // ---------------- connection ----------------
 
     private fun connectLoop() {
-        val relay = opts.relay ?: return
+        val relay = this.relay ?: return
         while (running) {
             try {
                 openSocket(relay).use { socket ->
@@ -170,6 +261,7 @@ private class Cli(private val opts: Options) {
                 t == "/quit" || t == "/exit" -> { running = false; break }
                 t == "/help" -> printUsage()
                 t == "/me"   -> printMe()
+                t == "/qr"   -> showQr()
                 t == "/list" -> printContacts()
                 t.startsWith("/name ") -> { handle = t.removePrefix("/name ").trim().ifBlank { "cli" }; store.handle = handle; sys("handle set to \"$handle\"") }
                 t.startsWith("/add ")  -> cmdAdd(t.removePrefix("/add ").trim())
@@ -290,13 +382,22 @@ private fun printUsage() {
     println("""
         OnionChat terminal client
 
-        Start:
+        Connect to a relay:
           onionchat --relay <addr> [--handle <name>] [--data <dir>] [--socks host:port]
           <addr> = a .onion (dialled via Tor SOCKS, default 127.0.0.1:9050)
                    or host:port for a local relay (e.g. 127.0.0.1:9999)
 
+        Host the relay in THIS process (nothing else to run):
+          onionchat --host [--control host:port] [--control-password <pw>]
+                      publishes an onion via your running Tor's control port
+                      (torrc needs: ControlPort 9051 + CookieAuthentication 1);
+                      share the printed --relay <onion> line with your peers.
+          onionchat --host --local [port]
+                      host without Tor on 127.0.0.1:<port> (LAN / testing).
+
         Commands:
           /me                       show your onion + x25519 + a shareable /add line
+          /qr                       show your identity as a QR the phone app can scan
           /add <onion> <x25519> [h] add/refresh a contact and make them the recipient
           /to <index|onion>         switch the active recipient
           /list                     list contacts (* = active)

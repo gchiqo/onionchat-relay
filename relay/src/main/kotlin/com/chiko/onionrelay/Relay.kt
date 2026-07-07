@@ -1,6 +1,6 @@
 package com.chiko.onionrelay
 
-import com.chiko.onionchat.crypto.OnionIdentity
+import com.chiko.onionchat.relay.RelayServer
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.toFile
 import io.matthewnelson.kmp.tor.resource.exec.tor.ResourceLoaderTorExec
@@ -12,24 +12,11 @@ import io.matthewnelson.kmp.tor.runtime.core.config.TorOption
 import io.matthewnelson.kmp.tor.runtime.core.net.Port.Companion.toPort
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.bouncycastle.util.encoders.Base64
-import org.json.JSONObject
-import java.io.DataInputStream
-import java.io.DataOutputStream
 import java.io.File
 import java.net.InetAddress
 import java.net.ServerSocket
-import java.net.Socket
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedQueue
 
-private const val VIRTUAL_PORT = 9999
-private const val MAX_FRAME = 64 * 1024
-private const val MAX_QUEUE = 200
-
-// id -> live connection; id -> queued messages for an offline recipient (ephemeral, in memory)
-private val connections = ConcurrentHashMap<String, DataOutputStream>()
-private val queues = ConcurrentHashMap<String, ConcurrentLinkedQueue<ByteArray>>()
+private const val VIRTUAL_PORT = RelayServer.VIRTUAL_PORT
 
 fun main(args: Array<String>) {
     val localIdx = args.indexOf("--local")
@@ -52,7 +39,7 @@ private fun runLocal(port: Int) {
     println(" LOCAL RELAY (no Tor) listening on 127.0.0.1:${server.localPort}")
     println(" Connect clients with:  --relay 127.0.0.1:${server.localPort}")
     println("============================================================")
-    acceptLoop(server)
+    RelayServer(::println).serve(server)
 }
 
 private fun runTor() = runBlocking {
@@ -88,79 +75,5 @@ private fun runTor() = runBlocking {
     println(" (give it ~1 min after first start to publish before connecting)")
     println("============================================================")
 
-    acceptLoop(server)
-}
-
-private fun acceptLoop(server: ServerSocket) {
-    while (true) {
-        val socket = server.accept()
-        Thread { handleClient(socket) }.start()
-    }
-}
-
-private fun handleClient(socket: Socket) {
-    var id: String? = null
-    var output: DataOutputStream? = null
-    try {
-        val input = DataInputStream(socket.getInputStream().buffered())
-        output = DataOutputStream(socket.getOutputStream().buffered())
-
-        val hello = JSONObject(String(readFrame(input)))
-        if (hello.getString("t") != "hello" || !verifyHello(hello)) {
-            socket.close(); return
-        }
-        id = hello.getString("id")
-        connections[id] = output
-        println("[+] ${id.take(16)}… online (${connections.size} connected)")
-
-        // flush anything queued while they were offline
-        queues.remove(id)?.forEach { synchronized(output) { writeFrame(output, it) } }
-
-        while (true) {
-            val frame = JSONObject(String(readFrame(input)))
-            if (frame.getString("t") != "send") continue
-            val to = frame.getString("to")
-            val deliver = JSONObject()
-                .put("t", "deliver")
-                .put("from", frame.getString("from"))
-                .put("ts", frame.optLong("ts"))
-                .put("body", frame.getString("body"))
-                .toString().toByteArray()
-
-            val target = connections[to]
-            if (target != null) {
-                synchronized(target) { writeFrame(target, deliver) }
-                println("[>] ${to.take(16)}… delivered")
-            } else {
-                val q = queues.getOrPut(to) { ConcurrentLinkedQueue() }
-                if (q.size < MAX_QUEUE) q.add(deliver)
-                println("[~] ${to.take(16)}… offline, queued (${q.size})")
-            }
-        }
-    } catch (_: Exception) {
-        // client disconnected
-    } finally {
-        if (id != null && output != null) connections.remove(id, output)
-        runCatching { socket.close() }
-        if (id != null) println("[-] ${id.take(16)}… disconnected (${connections.size} connected)")
-    }
-}
-
-private fun verifyHello(hello: JSONObject): Boolean {
-    val id = hello.getString("id")
-    val ts = hello.optLong("ts")
-    val sig = Base64.decode(hello.getString("sig"))
-    return OnionIdentity.verify(id, ("hello$id$ts").toByteArray(), sig)
-}
-
-private fun writeFrame(out: DataOutputStream, payload: ByteArray) {
-    out.writeInt(payload.size)
-    out.write(payload)
-    out.flush()
-}
-
-private fun readFrame(input: DataInputStream): ByteArray {
-    val len = input.readInt()
-    require(len in 0..MAX_FRAME) { "bad frame length" }
-    return ByteArray(len).also { input.readFully(it) }
+    RelayServer(::println).serve(server)
 }

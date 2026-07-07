@@ -15,7 +15,11 @@ repositories {
 
 dependencies {
     implementation(project(":core"))
+    implementation("com.google.zxing:core:3.5.3")   // render the identity QR in the terminal
+    testImplementation("junit:junit:4.13.2")
 }
+
+tasks.test { useJUnit() }
 
 // Runs on any JRE 17+ (Linux, Windows, macOS, Termux, FreeBSD).
 kotlin {
