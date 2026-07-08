@@ -16,7 +16,11 @@ dependencies {
     implementation("io.matthewnelson.kmp-tor:runtime:2.6.0")
     implementation("io.matthewnelson.kmp-tor:resource-exec-tor:408.22.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+
+    testImplementation("junit:junit:4.13.2")
 }
+
+tasks.test { useJUnit(); testLogging { showStandardStreams = true } }
 
 kotlin {
     jvmToolchain(21)
