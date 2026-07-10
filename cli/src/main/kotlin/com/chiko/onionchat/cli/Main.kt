@@ -31,6 +31,8 @@ import kotlin.system.exitProcess
  */
 private const val VIRTUAL_PORT = 9999
 private const val RECONNECT_MS = 3_000L
+private const val P2P_SEND_ATTEMPTS = 12      // mobile onions flap; keep retrying in the background
+private const val P2P_SEND_RETRY_MS = 5_000L  // ~1 min total
 
 fun main(args: Array<String>) {
     if (args.contains("--help") || args.contains("-h")) {
@@ -175,17 +177,22 @@ private class Cli(private val opts: Options) {
         val contact = contacts[peer] ?: run { sys("unknown contact: ${short(peer)}"); return }
         if (contact.x25519.isBlank()) { sys("no encryption key for ${short(peer)} — need their /me or QR"); return }
         val sealed = SealedBox.seal(Base64.decode(contact.x25519), MessageCodec.encode(identity, handle, text, now()))
-        repeat(2) { attempt ->
-            try {
-                val socket = p2pPeers[peer]?.takeIf { !it.isClosed } ?: dialPeer(peer).also { p2pPeers[peer] = it }
-                synchronized(socket) { MessageCodec.writeFrame(socket.getOutputStream(), sealed) }
-                println("you -> ${short(peer)}: $text")
-                return
-            } catch (e: Exception) {
-                p2pPeers.remove(peer)?.let { runCatching { it.close() } }
-                if (attempt == 1) sys("send failed — peer offline or still publishing? (${e.message})")
+        println("you -> ${short(peer)}: $text")
+        // deliver in the background and keep retrying while the peer's onion settles,
+        // so a transient "host unreachable" (mobile onion flapping) heals itself.
+        Thread({
+            repeat(P2P_SEND_ATTEMPTS) { attempt ->
+                try {
+                    val socket = p2pPeers[peer]?.takeIf { !it.isClosed } ?: dialPeer(peer).also { p2pPeers[peer] = it }
+                    synchronized(socket) { MessageCodec.writeFrame(socket.getOutputStream(), sealed) }
+                    return@Thread
+                } catch (e: Exception) {
+                    p2pPeers.remove(peer)?.let { runCatching { it.close() } }
+                    if (attempt < P2P_SEND_ATTEMPTS - 1) Thread.sleep(P2P_SEND_RETRY_MS)
+                    else { print("\n* couldn't deliver to ${short(peer)} — is that contact online? (${e.message})\n> "); System.out.flush() }
+                }
             }
-        }
+        }, "p2p-send").apply { isDaemon = true; start() }
     }
 
     private fun dialPeer(peer: String): Socket {
