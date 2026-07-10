@@ -14,6 +14,7 @@ import java.net.Proxy
 import java.net.ServerSocket
 import java.net.Socket
 import java.security.MessageDigest
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.system.exitProcess
 
 /**
@@ -50,6 +51,7 @@ private data class Options(
     val controlHost: String,
     val controlPort: Int,
     val controlPassword: String?,
+    val p2p: Boolean,         // serverless direct P2P — interoperates with the app's empty-relay mode
 ) {
     companion object {
         fun parse(args: Array<String>): Options {
@@ -63,12 +65,14 @@ private data class Options(
             var controlHost = "127.0.0.1"
             var controlPort = 9051
             var controlPassword: String? = null
+            var p2p = false
             var i = 0
             while (i < args.size) {
                 when (args[i]) {
                     "--data"   -> args.getOrNull(++i)?.let { dataDir = File(it) }
                     "--relay"  -> relay = args.getOrNull(++i)
                     "--handle" -> handle = args.getOrNull(++i)
+                    "--p2p"    -> p2p = true
                     "--host"   -> host = true
                     "--local"  -> {
                         // optional following port; default to the well-known virtual port
@@ -87,7 +91,7 @@ private data class Options(
                 }
                 i++
             }
-            return Options(dataDir, relay, socksHost, socksPort, handle, host, localPort, controlHost, controlPort, controlPassword)
+            return Options(dataDir, relay, socksHost, socksPort, handle, host, localPort, controlHost, controlPort, controlPassword, p2p)
         }
     }
 }
@@ -107,17 +111,88 @@ private class Cli(private val opts: Options) {
     // effective relay address (may be set by --host to our own in-process relay)
     private var relay: String? = opts.relay
     @Volatile private var torControl: TorControl? = null
+    private val p2pPeers = ConcurrentHashMap<String, Socket>()   // outbound conns to peers
 
     fun run() {
         opts.handleOverride?.let { store.handle = it }
-        if (opts.host) startHost()
         printBanner()
-        if (relay != null) {
-            Thread(::connectLoop, "relay-conn").apply { isDaemon = true; start() }
+        if (opts.p2p) {
+            startP2p()
         } else {
-            sys("no --relay/--host given: offline mode (identity only, cannot send/receive)")
+            if (opts.host) startHost()
+            if (relay != null) {
+                Thread(::connectLoop, "relay-conn").apply { isDaemon = true; start() }
+            } else {
+                sys("no --relay/--host/--p2p given: offline mode (identity only, cannot send/receive)")
+            }
         }
         commandLoop()
+    }
+
+    // ---------------- serverless P2P (interoperates with the app's empty-relay mode) ----------------
+
+    private fun startP2p() {
+        val server = ServerSocket(0, 128, InetAddress.getLoopbackAddress())
+        val port = server.localPort
+        val onion = try {
+            sys("publishing your identity onion via Tor control (${opts.controlHost}:${opts.controlPort})…")
+            val tc = TorControl.connect(opts.controlHost, opts.controlPort, opts.controlPassword)
+            torControl = tc
+            tc.publishOnion(VIRTUAL_PORT, port, torIdentityKeyBlob())
+        } catch (e: Exception) {
+            sys("could not publish onion: ${e.message}")
+            sys("start Tor with a control port (torrc: 'ControlPort 9051' + a HashedControlPassword)")
+            sys("and pass --control-password <pw>. Tor's SOCKS (9050) is also used to reach peers.")
+            exitProcess(2)
+        }
+        if (onion != identity.onionAddress) sys("warning: hosted onion != identity")
+        Thread({ acceptP2p(server) }, "p2p-accept").apply { isDaemon = true; start() }
+        println("==============================================================")
+        println("  SERVERLESS P2P — no relay. You're reachable at your identity onion.")
+        println("  On the PHONE: leave the Relay field EMPTY, just scan this QR:")
+        println("==============================================================")
+        showQr()
+        println("  (give the onion ~1–2 min to publish before the phone connects)")
+    }
+
+    private fun acceptP2p(server: ServerSocket) {
+        while (running) {
+            val socket = try { server.accept() } catch (e: Exception) { break }
+            Thread({ readP2pPeer(socket) }, "p2p-peer").apply { isDaemon = true; start() }
+        }
+    }
+
+    private fun readP2pPeer(socket: Socket) {
+        try {
+            val input = socket.getInputStream().buffered()
+            while (running) onDeliver(MessageCodec.readFrame(input))   // frame = an E2E sealed box
+        } catch (_: Exception) {
+        } finally { runCatching { socket.close() } }
+    }
+
+    private fun sendP2p(text: String) {
+        val peer = activePeer ?: run { sys("no recipient — /add <onion> <x25519> or /to first"); return }
+        val contact = contacts[peer] ?: run { sys("unknown contact: ${short(peer)}"); return }
+        if (contact.x25519.isBlank()) { sys("no encryption key for ${short(peer)} — need their /me or QR"); return }
+        val sealed = SealedBox.seal(Base64.decode(contact.x25519), MessageCodec.encode(identity, handle, text, now()))
+        repeat(2) { attempt ->
+            try {
+                val socket = p2pPeers[peer]?.takeIf { !it.isClosed } ?: dialPeer(peer).also { p2pPeers[peer] = it }
+                synchronized(socket) { MessageCodec.writeFrame(socket.getOutputStream(), sealed) }
+                println("you -> ${short(peer)}: $text")
+                return
+            } catch (e: Exception) {
+                p2pPeers.remove(peer)?.let { runCatching { it.close() } }
+                if (attempt == 1) sys("send failed — peer offline or still publishing? (${e.message})")
+            }
+        }
+    }
+
+    private fun dialPeer(peer: String): Socket {
+        require(peer.endsWith(".onion")) { "peer must be an onion address" }
+        return Socket(Proxy(Proxy.Type.SOCKS, InetSocketAddress(opts.socksHost, opts.socksPort))).apply {
+            connect(InetSocketAddress.createUnresolved(peer, VIRTUAL_PORT), 60_000)
+        }
     }
 
     // ---------------- host mode (run the relay in-process) ----------------
@@ -233,6 +308,7 @@ private class Cli(private val opts: Options) {
     // ---------------- sending ----------------
 
     private fun send(text: String) {
+        if (opts.p2p) { sendP2p(text); return }
         val peer = activePeer ?: run { sys("no recipient set — /to <onion> or /add first"); return }
         val contact = contacts[peer] ?: run { sys("unknown contact: $peer"); return }
         if (contact.x25519.isBlank()) { sys("no encryption key for $peer (need their /me line)"); return }
@@ -387,10 +463,16 @@ private fun printUsage() {
           <addr> = a .onion (dialled via Tor SOCKS, default 127.0.0.1:9050)
                    or host:port for a local relay (e.g. 127.0.0.1:9999)
 
+        Serverless P2P — talk to the phone with NO relay (phone: leave Relay empty):
+          onionchat --p2p [--control-password <pw>] [--socks host:port]
+                      hosts your identity onion and dials contacts directly, exactly
+                      like the app's serverless mode. Needs Tor with a control port
+                      (torrc: ControlPort 9051 + a HashedControlPassword) and SOCKS.
+                      Share the printed QR / add line; the phone just scans it.
+
         Host the relay in THIS process (nothing else to run):
           onionchat --host [--control host:port] [--control-password <pw>]
-                      publishes an onion via your running Tor's control port
-                      (torrc needs: ControlPort 9051 + CookieAuthentication 1);
+                      publishes an onion via your running Tor's control port;
                       share the printed --relay <onion> line with your peers.
           onionchat --host --local [port]
                       host without Tor on 127.0.0.1:<port> (LAN / testing).
