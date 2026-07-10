@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OnionChat — პრეზენტაცია</title>
+<style>
+  :root{
+    --bg:#0e0b16; --bg2:#161027; --ink:#f4f1fb; --muted:#b3aac9;
+    --accent:#a855f7; --accent2:#7c3aed; --good:#34d399; --bad:#f87171; --warn:#fbbf24;
+    --line:#2a2340; --card:#1a1330;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,"Sylfaen",sans-serif;
+    overflow:hidden;
+  }
+  .deck{position:relative; width:100vw; height:100vh;}
+  .slide{
+    position:absolute; inset:0; display:none;
+    flex-direction:column; justify-content:center;
+    padding:6vh 8vw; gap:2.2vh;
+    background:radial-gradient(1200px 700px at 80% -10%, #24164a 0%, transparent 55%),
+               radial-gradient(1000px 700px at -10% 110%, #1a1140 0%, transparent 55%),
+               var(--bg);
+    animation:fade .35s ease;
+  }
+  .slide.active{display:flex;}
+  @keyframes fade{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+
+  .kicker{color:var(--accent); font-weight:700; letter-spacing:.06em; text-transform:uppercase; font-size:1.6vh;}
+  h1{font-size:7vh; line-height:1.05; font-weight:800; letter-spacing:-.5px;}
+  h2{font-size:4.6vh; line-height:1.12; font-weight:800; letter-spacing:-.3px;}
+  h3{font-size:3vh; font-weight:700;}
+  p,li{font-size:2.5vh; line-height:1.5; color:var(--ink);}
+  .lead{font-size:3vh; color:var(--muted); max-width:60ch;}
+  .muted{color:var(--muted);}
+  .accent{color:var(--accent);}
+  .good{color:var(--good);} .bad{color:var(--bad);} .warn{color:var(--warn);}
+  strong{color:#fff;}
+  ul{padding-left:0; list-style:none; display:flex; flex-direction:column; gap:1.4vh;}
+  ul li::before{content:"›"; color:var(--accent); font-weight:800; margin-right:.6em;}
+  .cols{display:flex; gap:4vw; align-items:center;}
+  .col{flex:1; min-width:0;}
+  code,.mono{font-family:"Consolas","SF Mono",ui-monospace,monospace;}
+  .pill{display:inline-block; background:#2a1c4d; color:#d9c8ff; border:1px solid #4a2f80;
+        padding:.35em .8em; border-radius:999px; font-size:1.9vh; font-family:"Consolas",monospace;}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:3vh 3vh;}
+  .cards{display:flex; gap:2vw;}
+  .cards .card{flex:1;}
+  .big{font-size:9vh; font-weight:800; line-height:1; color:var(--accent);}
+
+  table{border-collapse:collapse; width:100%; font-size:2.1vh;}
+  th,td{border-bottom:1px solid var(--line); padding:1.2vh 1vh; text-align:left;}
+  th{color:var(--muted); font-weight:600; font-size:1.8vh;}
+  .tick{color:var(--good); font-weight:800;} .cross{color:var(--bad); font-weight:800;}
+
+  .phone{width:26vh; height:53vh; background:#0b0912; border:0.9vh solid #2b2440; border-radius:4vh;
+         box-shadow:0 3vh 6vh rgba(0,0,0,.5), inset 0 0 0 1px #3a3157; overflow:hidden; position:relative; flex:none;}
+  .phone .notch{position:absolute; top:0; left:50%; transform:translateX(-50%); width:34%; height:2.4vh;
+                background:#2b2440; border-radius:0 0 1.4vh 1.4vh; z-index:3;}
+  .scr{position:absolute; inset:0; display:flex; flex-direction:column; font-size:1.7vh;}
+  .appbar{background:#1b1330; padding:3.2vh 1.6vh 1.2vh; display:flex; align-items:center; gap:.7vh; border-bottom:1px solid #2a2340;}
+  .appbar .logo{width:2.4vh; height:2.4vh; border-radius:.5vh; background:linear-gradient(135deg,var(--accent),var(--accent2));}
+  .appbar .t{font-weight:700; font-size:1.8vh;}
+  .appbar .st{font-size:1.2vh; color:var(--good);}
+  .dot{width:1vh; height:1vh; border-radius:50%; background:var(--good); margin-left:auto;}
+  .list{flex:1; overflow:hidden; background:#120f20;}
+  .row{display:flex; align-items:center; gap:1vh; padding:1.3vh 1.6vh; border-bottom:1px solid #201a36;}
+  .av{width:3.4vh; height:3.4vh; border-radius:50%; background:linear-gradient(135deg,#5b2a86,#a855f7); flex:none;}
+  .row .nm{font-weight:600;} .row .pv{font-size:1.3vh; color:var(--muted);}
+  .bubbles{flex:1; background:#120f20; padding:1.4vh; display:flex; flex-direction:column; gap:1vh; justify-content:flex-end;}
+  .b{max-width:80%; padding:1vh 1.3vh; border-radius:1.6vh; font-size:1.45vh; line-height:1.3;}
+  .b.in{background:#241c3e; align-self:flex-start; border-bottom-left-radius:.4vh;}
+  .b.out{background:linear-gradient(135deg,var(--accent2),var(--accent)); align-self:flex-end; border-bottom-right-radius:.4vh; color:#fff;}
+  .inputbar{display:flex; gap:1vh; padding:1.2vh 1.4vh; background:#1b1330; border-top:1px solid #2a2340;}
+  .inputbar .fld{flex:1; background:#0f0c1c; border:1px solid #35294f; border-radius:2vh; padding:.9vh 1.3vh; color:var(--muted); font-size:1.4vh;}
+  .split-top{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1vh; background:#120f20;}
+  .split-bot{flex:1; background:#05040a; display:flex; align-items:center; justify-content:center; position:relative; border-top:2px solid var(--accent);}
+  .split-bot .hint{position:absolute; bottom:1.2vh; font-size:1.2vh; background:#000a; padding:.4vh 1vh; border-radius:1vh;}
+  .scanline{position:absolute; left:12%; right:12%; height:2px; background:var(--accent); box-shadow:0 0 12px var(--accent); top:45%;}
+  .cambox{width:60%; aspect-ratio:1; border:2px solid #ffffff55; border-radius:1.4vh;}
+
+  .terminal{background:#0a0910; border:1px solid #2a2340; border-radius:12px; overflow:hidden; width:100%; box-shadow:0 2vh 5vh rgba(0,0,0,.5);}
+  .terminal .bar{background:#171226; padding:1.1vh 1.4vh; display:flex; gap:.8vh; align-items:center;}
+  .terminal .bar i{width:1.4vh; height:1.4vh; border-radius:50%; display:inline-block;}
+  .terminal .bar .r{background:#ff5f56;} .terminal .bar .y{background:#ffbd2e;} .terminal .bar .g{background:#27c93f;}
+  .terminal .bar span{color:var(--muted); font-size:1.5vh; margin-left:1vh; font-family:monospace;}
+  .terminal pre{padding:2vh 2.2vh; font-family:"Consolas",monospace; font-size:1.75vh; line-height:1.5; color:#d7cff0; white-space:pre-wrap;}
+  .terminal .p{color:var(--accent);} .terminal .gr{color:var(--good);} .terminal .mu{color:#7d7397;}
+  .qrterm{background:#fff; color:#000; font-family:"Consolas",monospace; font-size:1.15vh; line-height:.92;
+          padding:1.6vh; border-radius:1.2vh; white-space:pre; box-shadow:0 2vh 5vh rgba(0,0,0,.5);}
+
+  .flow{display:flex; align-items:center; gap:1vw; flex-wrap:wrap;}
+  .node{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1.6vh 1.6vh; text-align:center; font-size:1.85vh; min-width:10vh;}
+  .node .ic{font-size:3.2vh;}
+  .node.you{border-color:var(--accent);}
+  .node.hop{border-style:dashed; border-color:#4a3a7a;}
+  .arrow{color:var(--accent); font-size:2.6vh;}
+  .lock{color:var(--good);}
+
+  .qr{width:20vh; height:20vh; background:#fff; border-radius:1.5vh; padding:1.5vh;}
+  .qr svg{width:100%; height:100%; display:block;}
+
+  .foot{position:fixed; bottom:2.4vh; left:8vw; right:8vw; display:flex; justify-content:space-between;
+        align-items:center; color:var(--muted); font-size:1.6vh; z-index:20;}
+  .foot .brand{font-weight:700; color:var(--accent);}
+  .progress{position:fixed; top:0; left:0; height:4px; background:linear-gradient(90deg,var(--accent),var(--accent2)); z-index:30; transition:width .3s;}
+  .hintkey{position:fixed; bottom:2.4vh; left:50%; transform:translateX(-50%); color:#6d6488; font-size:1.4vh; z-index:20;}
+
+  .title-wrap{align-items:flex-start;}
+  .brandbig{font-size:11vh; font-weight:800; letter-spacing:-2px; line-height:1;}
+  .brandbig .on{color:var(--accent);}
+  .onionpill{margin-top:2vh;}
+
+  @media print{
+    body{overflow:visible;}
+    .slide{display:flex !important; position:relative; inset:auto; height:100vh; page-break-after:always; animation:none;}
+    .foot,.hintkey,.progress{position:static;}
+    @page{size:landscape;}
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="deck" id="deck">
+
+  <!-- 1 სათაური -->
+  <section class="slide title-wrap">
+    <div class="kicker">საბაკალავრო ნაშრომი · კიბერუსაფრთხოება</div>
+    <div class="brandbig"><span class="on">Onion</span>Chat</div>
+    <h3 class="muted" style="font-weight:500; max-width:30ch;">უსერვერო, ანონიმური, წარმავალი მესინჯერი Tor v3 onion სერვისებზე</h3>
+    <div class="onionpill pill">იდენტობა = base32( ed25519_key ) .onion · აკაუნტების გარეშე · სერვერების გარეშე</div>
+    <div style="margin-top:3vh;">
+      <p><strong>გიორგი ჩიქოვანი</strong> <span class="muted">· ხელმძღვანელი: მარიამ ჩხაიძე</span></p>
+      <p class="muted">საქართველოს ტექნიკური უნივერსიტეტი · 2026</p>
+    </div>
+  </section>
+
+  <!-- 2 ჩვეულებრივი ინტერნეტი -->
+  <section class="slide">
+    <div class="kicker">როგორ მუშაობს ინტერნეტი, რომელსაც ყოველდღე იყენებ</div>
+    <h2>ყოველ შეტყობინებას ატყვია <span class="accent">შენი მისამართი</span></h2>
+    <div class="cols">
+      <div class="col">
+        <div class="flow" style="margin:2vh 0;">
+          <div class="node you"><div class="ic">📱</div>შენ<br><span class="mono muted" style="font-size:1.5vh;">IP 31.146.x.x</span></div>
+          <span class="arrow">──▶</span>
+          <div class="node"><div class="ic">🌐</div>სერვერი<br><span class="muted" style="font-size:1.5vh;">აპი / ვებგვერდი</span></div>
+        </div>
+        <ul>
+          <li>შენი <strong>IP მისამართი</strong> ცხადყოფს, ვინ ხარ და დაახლოებით <strong>სად</strong> ხარ.</li>
+          <li>სერვერი ხედავს <strong>შენს ვინაობას, მდებარეობას და ყველას, ვისთანაც საუბრობ</strong>.</li>
+          <li>შენი პროვაიდერი (და ყველა შუალედური) ხედავს, <strong>რომელ სერვერებს უკავშირდები</strong>.</li>
+        </ul>
+      </div>
+      <div class="col">
+        <div class="card">
+          <p class="muted" style="font-size:2vh;">ტელეფონის ნომერი, IP და კომპანიის ბაზა შუაში —</p>
+          <h3 style="margin-top:1.5vh;">ეს არის <span class="bad">ვინაობის კვალი</span>, ჩადებული დიზაინში.</h3>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 Tor -->
+  <section class="slide">
+    <div class="kicker">მდებარეობის გადაწყვეტა · Tor</div>
+    <h2>Tor მალავს, <span class="accent">სად ხარ</span>, სამ რელეზე გატარებით</h2>
+    <div class="flow" style="margin:3vh 0;">
+      <div class="node you"><div class="ic">📱</div>შენ</div>
+      <span class="arrow lock">🔒▶</span>
+      <div class="node hop"><div class="ic">🧅</div>მცველი</div>
+      <span class="arrow lock">🔒▶</span>
+      <div class="node hop"><div class="ic">🧅</div>შუა</div>
+      <span class="arrow lock">🔒▶</span>
+      <div class="node hop"><div class="ic">🧅</div>გამსვლელი</div>
+      <span class="arrow">──▶</span>
+      <div class="node"><div class="ic">🌐</div>დანიშნულება</div>
+    </div>
+    <ul>
+      <li>ტრაფიკი გახვეულია <strong>დაშიფვრის ფენებში</strong> — იხსნება რელედან რელეზე (ხახვივით).</li>
+      <li><strong>ვერცერთი რელე ვერ ხედავს ერთდროულად</strong>, ვინ ხარ <em>და</em> სად მიდიხარ.</li>
+      <li>დანიშნულება ხედავს Tor-ის გამსვლელ კვანძს — <strong>არასოდეს შენს ნამდვილ IP-ს</strong>.</li>
+    </ul>
+  </section>
+
+  <!-- 4 დაშიფვრის ილუზია -->
+  <section class="slide">
+    <div class="kicker">კომფორტული ტყუილი</div>
+    <h2>„მაგრამ ეს ხომ <span class="accent">ბოლოდან-ბოლომდე დაშიფრულია</span>…“</h2>
+    <div class="cols">
+      <div class="col">
+        <div class="card" style="border-color:#2f6b4d;">
+          <h3 class="good">✓ რას იცავს დაშიფვრა</h3>
+          <p class="muted" style="margin-top:1.2vh;">შეტყობინების <strong>შიგთავსს</strong>, სანამ ის ორ ტელეფონს შორის მოგზაურობს.</p>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card" style="border-color:#6b2f3a;">
+          <h3 class="bad">✗ რას არ იცავს</h3>
+          <ul style="margin-top:1.2vh; gap:.9vh;">
+            <li><strong>ვინ</strong> ხარ (ტელეფონის ნომერი, IP)</li>
+            <li><strong>ვისთან</strong> და <strong>როდის</strong> საუბრობ (მეტამონაცემები)</li>
+            <li><strong>კომპანიის სერვერი</strong>, რომელსაც სასამართლო დაავალებს</li>
+            <li><strong>გატეხილი ტელეფონი</strong>, რომელიც ეკრანს კითხულობს</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <p class="lead" style="margin-top:1vh;">დაშიფვრა იცავს <em>წერილს</em> — არა <em>კონვერტს</em>, <em>ფოსტას</em>, ან <em>მკითხველს, ვინც უკნიდან იყურება</em>.</p>
+  </section>
+
+  <!-- 5 Telegram -->
+  <section class="slide">
+    <div class="kicker">შემთხვევა 1 · Telegram</div>
+    <h2>„დაშიფრული“ — და მაინც პოლიციას აძლევს შენს <span class="bad">IP-სა და ტელეფონის ნომერს</span></h2>
+    <div class="cols">
+      <div class="col">
+        <ul>
+          <li>Telegram-ის ჩატები <strong>ნაგულისხმევად არ არის ბოლოდან-ბოლომდე დაშიფრული</strong> — მხოლოდ ხელით ჩართული „Secret Chats“.</li>
+          <li>დანარჩენი ყველაფერი <strong>Telegram-ის სერვერებზეა</strong>, რომლებიც გასაღებებს ინახავენ.</li>
+          <li><strong>2024 წლის სექტემბერი:</strong> დირექტორის დაკავების შემდეგ Telegram-ის პოლიტიკა ახლა <strong class="bad">უზიარებს ხელისუფლებას მომხმარებლის IP-სა და ტელეფონის ნომერს</strong> კანონიერი მოთხოვნისას.</li>
+        </ul>
+      </div>
+      <div class="col">
+        <div class="card">
+          <div class="big">IP + ☎</div>
+          <p class="muted" style="margin-top:1.5vh;">ორი მონაცემი, რომელიც „ანონიმურ“ აკაუნტს <strong>სახელად და საცხოვრებელ მისამართად</strong> აქცევს.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 WhatsApp / Pegasus -->
+  <section class="slide">
+    <div class="kicker">შემთხვევა 2 · WhatsApp და Pegasus</div>
+    <h2>სრულყოფილი დაშიფვრა <span class="bad">უსარგებლოა</span>, როცა თავად ტელეფონია გატეხილი</h2>
+    <div class="cols">
+      <div class="col">
+        <ul>
+          <li>WhatsApp <strong>შიგთავსს</strong> ბოლოდან-ბოლომდე შიფრავს (Signal პროტოკოლი) — მართლაც კარგია.</li>
+          <li>მაგრამ <strong>Pegasus</strong> (NSO Group) არის <strong>„zero-click“ ჯაშუშური პროგრამა</strong>, რომელიც ტელეფონის ოპერაციულ სისტემას იპყრობს და შეტყობინებებს <strong class="bad">გაშიფვრის შემდეგ</strong> კითხულობს — პლუს მიკროფონი, კამერა, ეკრანი.</li>
+          <li><strong>2019-ში</strong> ის ერთი <strong>WhatsApp-ის ზარით</strong> მიეწოდა. დაშიფვრა კი არ გატყდა — <strong>გვერდი აუარეს</strong>.</li>
+        </ul>
+      </div>
+      <div class="col">
+        <div class="card" style="border-color:#6b2f3a;">
+          <h3>🔓 გაკვეთილი</h3>
+          <p style="margin-top:1.4vh;">თუ <strong>მოწყობილობა</strong> ან <strong>კომპანიაა</strong> სუსტი წერტილი, ბოლოდან-ბოლომდე დაშიფვრა <span class="bad">მარტო ვერ გიხსნის</span>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 ნამდვილი პრობლემა -->
+  <section class="slide">
+    <div class="kicker">კანონზომიერება</div>
+    <h2>სამი სისუსტე, რომელსაც <span class="accent">ყველა პოპულარული მესინჯერი</span> იზიარებს</h2>
+    <div class="cards" style="margin-top:2vh;">
+      <div class="card">
+        <div class="big">1</div>
+        <h3 style="margin-top:1vh;">იდენტობა = ტელეფონის ნომერი</h3>
+        <p class="muted" style="margin-top:1vh;">მიბმული ნამდვილ სახელზე, SIM-სა და IP-ზე. რეგისტრაცია <em>თავად არის</em> დეანონიმიზაცია.</p>
+      </div>
+      <div class="card">
+        <div class="big">2</div>
+        <h3 style="margin-top:1vh;">ცენტრალური სერვერი</h3>
+        <p class="muted" style="margin-top:1vh;">ერთი კომპანია, რომელსაც სასამართლო დაავალებს, აიძულებს, გატეხავს ან დახურავს.</p>
+      </div>
+      <div class="card">
+        <div class="big">3</div>
+        <h3 style="margin-top:1vh;">მუდმივი ისტორია</h3>
+        <p class="muted" style="margin-top:1vh;">ინახება სერვერებსა და ტელეფონებში — ჩამორთმევის მოლოდინში.</p>
+      </div>
+    </div>
+    <p class="lead" style="margin-top:2vh;">დაშიფვრა <strong>ვერცერთს</strong> ვერ აგვარებს. ამიტომ არქიტექტურა უნდა შეიცვალოს.</p>
+  </section>
+
+  <!-- 8 onion სერვისები -->
+  <section class="slide">
+    <div class="kicker">Tor-ის მეორე ნახევარი</div>
+    <h2>onion სერვისები: ორი ადამიანი ხვდება <span class="accent">სერვერისა და IP-ების გარეშე</span></h2>
+    <div class="flow" style="margin:2.5vh 0;">
+      <div class="node you"><div class="ic">📱</div>ალისი</div>
+      <span class="arrow lock">🔒▶</span>
+      <div class="node hop"><div class="ic">🧅</div>Tor</div>
+      <span class="arrow lock">◀🔒</span>
+      <div class="node you"><div class="ic">📱</div>ბობი</div>
+    </div>
+    <ul>
+      <li>ყოველი მოწყობილობა მისაწვდომია <span class="pill">…56 სიმბოლო….onion</span> მისამართზე.</li>
+      <li>მისამართი <strong>თავად არის საჯარო გასაღები</strong> — ანუ <strong>თვით-ავთენტიფიცირებადი</strong>: სერტიფიკატის, ავტორიტეტის გარეშე.</li>
+      <li>ისინი უკავშირდებიან Tor-ით, <strong>ერთმანეთის IP-ს გაუგებრად</strong> და <strong>შუაში სერვერის გარეშე</strong>.</li>
+    </ul>
+  </section>
+
+  <!-- 9 იდეა -->
+  <section class="slide" style="align-items:flex-start;">
+    <div class="kicker">იდეა</div>
+    <h1>რა იქნებოდა, შენი იდენტობა<br><span class="accent">გასაღები</span> რომ ყოფილიყო,<br>და არა ტელეფონის ნომერი?</h1>
+    <div class="cards" style="margin-top:3vh; width:100%;">
+      <div class="card"><h3>🔑 აკაუნტების გარეშე</h3><p class="muted" style="margin-top:.8vh;">შენი ID არის შენი გასაღებიდან მიღებული Tor onion.</p></div>
+      <div class="card"><h3>🌐 სერვერების გარეშე</h3><p class="muted" style="margin-top:.8vh;">ტელეფონები პირდაპირ საუბრობენ Tor-ით.</p></div>
+      <div class="card"><h3>💨 ისტორიის გარეშე</h3><p class="muted" style="margin-top:.8vh;">შეტყობინებები მეხსიერებაშია, იშლება გამოსვლისას.</p></div>
+      <div class="card"><h3>🧅 IP-ის გაჟონვის გარეშე</h3><p class="muted" style="margin-top:.8vh;">ყველაფერი Tor-ზე — მდებარეობა დამალული.</p></div>
+    </div>
+  </section>
+
+  <!-- 10 როგორ მუშაობს -->
+  <section class="slide">
+    <div class="kicker">როგორ მუშაობს OnionChat</div>
+    <h2>იდენტობა · დაშიფვრა · ტრანსპორტი</h2>
+    <div class="cols" style="margin-top:1vh;">
+      <div class="col">
+        <ul>
+          <li><strong>იდენტობა</strong> — Ed25519 გასაღები → Tor v3 <span class="mono">.onion</span>. მისამართი <em>თავად არის</em> იდენტობა; ხელმოწერის შემოწმება ამტკიცებს გამგზავნს. PKI-ს გარეშე.</li>
+          <li><strong>დაშიფვრა</strong> — ყოველი შეტყობინება <strong>დალუქული ყუთია</strong>: ახალი X25519 გაცვლა → AES-256-GCM, შემდეგ ხელმოწერილი. კონფიდენციალური, ავთენტური, წინსვლის საიდუმლოებით.</li>
+          <li><strong>ტრანსპორტი</strong> — პირდაპირი P2P: ყოველი ტელეფონი თავის onion-ს მასპინძლობს და კონტაქტს ურეკავს. არასავალდებულო უნდობი რელე ამატებს ოფლაინ მიწოდებას — ის მხოლოდ შიფრს ხედავს.</li>
+          <li><strong>წარმავალი</strong> — საუბრები დისკს არასოდეს ეხება.</li>
+        </ul>
+      </div>
+      <div class="col">
+        <div class="card mono" style="font-size:1.9vh; line-height:1.7;">
+          <div class="muted">// გაგზავნილი ქსელში</div>
+          <div><span class="accent">Seal</span>( <span class="accent">Sign</span>( message ) )</div>
+          <div style="margin-top:1.5vh;" class="muted">// რელე (თუ არსებობს) ხედავს მხოლოდ</div>
+          <div>შიფრტექსტს →</div>
+          <div>მარშრუტდება ლეიბლით, არასოდეს იკითხება</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 სქრინშოთები -->
+  <section class="slide">
+    <div class="kicker">აპლიკაცია · Android</div>
+    <h2>დაამატეთ ერთმანეთი პირისპირ, შემდეგ — საუბარი</h2>
+    <div class="cols" style="gap:3vw; margin-top:1vh; align-items:center; justify-content:center;">
+      <div style="text-align:center;">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="scr">
+            <div class="appbar"><div class="logo"></div><div><div class="t">კონტაქტის დამატება</div></div></div>
+            <div class="split-top">
+              <div class="muted" style="font-size:1.4vh;">აჩვენე მეგობარს</div>
+              <div class="qr" id="qr1"></div>
+            </div>
+            <div class="split-bot">
+              <div class="cambox"></div><div class="scanline"></div>
+              <div class="hint muted">დაასკანერე მეგობრის კოდი</div>
+            </div>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:1.2vh; font-size:1.8vh;">გაყოფილი ეკრანის QR დაწყვილება</p>
+      </div>
+      <div style="text-align:center;">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="scr">
+            <div class="appbar"><div class="logo"></div><div><div class="t">ალისი</div></div><div class="dot"></div></div>
+            <div class="bubbles">
+              <div class="b in">სალამი ალის, ბობი აქ ვარ, Tor-ით 👋</div>
+              <div class="b out">სალამი ბობ! მხოლოდ ჩვენი ორი ტელეფონი 🎉</div>
+              <div class="b in">მართლა ბოლოდან-ბოლომდე დაშიფრულია?</div>
+              <div class="b out">კი — ყოველ შეტყობინებაზე ახალი დალუქული ყუთი</div>
+            </div>
+            <div class="inputbar"><div class="fld">შეტყობინება</div></div>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:1.2vh; font-size:1.8vh;">პირდაპირი P2P ჩატი — რელეს გარეშე</p>
+      </div>
+      <div style="text-align:center;">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="scr">
+            <div class="appbar"><div class="logo"></div><div><div class="t">OnionChat</div><div class="st">მისაწვდომია ✓</div></div><div class="dot"></div></div>
+            <div class="list">
+              <div class="row"><div class="av"></div><div><div class="nm">ალისი</div><div class="pv">კი — ახალი დალუქული ყუთი…</div></div></div>
+              <div class="row"><div class="av"></div><div><div class="nm">კარლი</div><div class="pv">djilkncaaz…onion</div></div></div>
+              <div class="row"><div class="av"></div><div><div class="nm">დავითი</div><div class="pv">ხვალ გნახავ</div></div></div>
+            </div>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:1.2vh; font-size:1.8vh;">ცოცხალი სტატუსი: <span class="good">მისაწვდომია ✓</span></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 CLI -->
+  <section class="slide">
+    <div class="kicker">იგივე პროტოკოლი · ტერმინალი</div>
+    <h2>ის ტერმინალშიც მუშაობს — ტელეფონი ⇄ ლეპტოპი</h2>
+    <div class="cols">
+      <div class="col" style="flex:1.4;">
+        <div class="terminal">
+          <div class="bar"><i class="r"></i><i class="y"></i><i class="g"></i><span>onionchat — alice@laptop</span></div>
+<pre><span class="mu">== OnionChat — terminal client · alice ==</span>
+<span class="gr">HOSTING in THIS process — no separate relay needed.</span>
+  Peers connect with:  --relay …:9994
+<span class="p">&gt;</span> * connected
+<span class="mu">· relay [+] fmql26yy7t… online (2 connected)</span>
+bob <span class="mu">[fmql26yy7t…]</span>: hey alice, bob here over tor 👋
+<span class="p">you</span> -&gt; <span class="mu">fmql26yy7t…</span>: hi bob! nothing but our two terminals 🎉
+bob <span class="mu">[fmql26yy7t…]</span>: is this really end-to-end encrypted?
+<span class="p">you</span> -&gt; <span class="mu">fmql26yy7t…</span>: yep — a fresh sealed box per message
+<span class="gr">✓ ყოველი ხაზი: დალუქული ყუთი · ხელმოწერა შემოწმებულია</span></pre>
+        </div>
+      </div>
+      <div class="col">
+        <ul>
+          <li>ერთი საერთო პროტოკოლი → <strong>ტელეფონი და ტერმინალი თავსებადია</strong>.</li>
+          <li>მუშაობს <strong>Linux · macOS · Windows · Termux · FreeBSD</strong>-ზე.</li>
+          <li>ნებისმიერ კლიენტს <strong>თავადვე შეუძლია რელეს მასპინძლობა</strong> — მეტი არაფერია გასაშვები.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12b ტერმინალის QR -->
+  <section class="slide">
+    <div class="kicker">ტერმინალი · შენი იდენტობა</div>
+    <h2>შენი იდენტობა <span class="accent">QR არის</span> — ტერმინალშიც კი</h2>
+    <div class="cols" style="margin-top:1vh;">
+      <div class="col">
+        <div class="terminal">
+          <div class="bar"><i class="r"></i><i class="y"></i><i class="g"></i><span>onionchat — /me</span></div>
+<pre><span class="p">&gt;</span> /me
+handle : alice
+onion  : s7f3t35lhiezq5bb2hoevvywnb5zcszz
+         riiaxljqwgmvxe4nizkec5id.onion
+x25519 : 6teOoNYyMJcJfh50J2vgeKIwAdFoak…
+<span class="mu">share  : /add s7f3t35lhi…onion 6teOo… alice</span></pre>
+        </div>
+        <ul style="margin-top:2.2vh;">
+          <li>მთელი იდენტობა ერთი <strong>Ed25519 გასაღებია</strong> → onion მისამართი + დაშიფვრის გასაღები.</li>
+          <li>მეგობარი მას <strong>პირდაპირ ეკრანიდან</strong> ასკანერებს — სერვერის, ძებნის გარეშე.</li>
+        </ul>
+      </div>
+      <div class="col" style="flex:none; text-align:center;">
+<pre class="qrterm">  █▀▀▀▀▀█  ▀ ▄  ▀▄▄▀ ▀▀▄▄█▄▀▀▀█▀▄▄█▄▀▄ █▄▄█ █▀▀▀▀▀█
+  █ ███ █ ██▀▄▄▄█▀█ ▄ ▀▄▄▄▀▄▄▄▄▀▀ █ ▄▀▄▄ █▀ █ ███ █
+  █ ▀▀▀ █ █▀ ▄▀▀█▀ █▄▀█ █▀▀▀█▀ ██▄ ▄ ▄▄ ▄   █ ▀▀▀ █
+  ▀▀▀▀▀▀▀ █ ▀ █▄▀ ▀ █▄█ █ ▀ █ ▀▄█ █ ▀▄▀▄▀ ▀ ▀▀▀▀▀▀▀
+  █▄▀█▀▀▀ ▄▄█   ▀  ▀  █▀▀▀▀▀▀ ▄  ▀█▀█▀▀▀█ ▄ ▀▀▀▀▀
+   █ ▄ ▄▀█▄█▀█▀ ▀ █▀▄█▀▀█▀ ▄▀█▄▀██   █▀▄ ▄▀██▀▄██▄
+  ▄▄▄▀█ ▀▀█▀▀▄██▀▀█  ▀ ▄▀▀█ ██▄▀▄ ██▄▄▀▄▄ █▄ █▄▄ █▀
+   ▄▀█▄ ▀▄▀▄▄▄▄██▀▄ ▄▀ ▄ █▀█    ▄█ █▀▄█ ▀▀▀▄▄ ▄▄▀▄
+  ▀▀▀▀ █▀▀▄▄█▄ ▀▄▄ █▄█▀  ▀ █▀▀ ▀█▄ ▄ ▄█  ▄ ▀▄▄█▀ ▀▀
+   ▄█▀  ▀█▀  ▀ ▀▀  █ █  ▀██▀▀▀▄██  ▄  ▀▄ ▀▀▄▄█▄▀█▄
+  ▄▄██▀█▀▀▀▄▄▄ ▀ █ ▀▀▄▄▀▀▀▀▀ █▀▀ ▄▄▄▀ ▄██▄ █▄▀█ ▀▀█
+  ▄█▄▄█▀▀▀██▀█▄▄ ██ ██▀▄█▀▀▀█ ▄▄▄   ▀█▀▄ ▀█▀▀▀██▀▀
+  ▀█ ▄█ ▀ █ ▄▀▄▄█▄███▄█▄█ ▀ ██▄▀ █▄ ▀█▀▄█▄█ ▀ █ ▀██
+   ▀▀██▀▀▀▀▀█▀ ▀█ ▀█ ▄▀█████▀▄▄▄▄  ▀▀▀▀▄ ▄█▀██▀█▀█▀
+  ▀█▀ ██▀▄▀▀█▀▄ ▄█▀▄▄▄▄▄▀▀█▀▄█▄█▄ █▀▀▀▀▀▄██▀██  ▀ █
+    ▄█▄ ▀▄▀▄▄   ▀▀▄ █▄█▀▄▀█ ▀▄ ▄ ▀ ▀█▀██▄▀█▄ █   ▀▀
+  ▀    ▀▀▄█▄█  ▀█▄▄▀ ▀▄ ▀▄█▀▄▄█▄ ▀█▀█▀ ▄█▄▄▀▀▄▄▀▀▄
+  ███▄▄▀▀▄▀▀▀▀▄██▄ █ █▀█▀▄▄▀  ▀▄██▀█ █▄▄ █▀▄▀█▀▀███
+  ▄▄▀█▄▄▀█▄▄▀█▀▀▀▄█ ▄▄█ █▄ ▀ ▄▄▀▄█▄ ▀▀▄▀▀ ▄▀▀ █▀▀██
+   █▄▄ ▀▀▀ ▄██ ▀▀██ ▀▄▀█▄ ▄▄   ██▄   ███▀█ ▄▄█▀▄▀ ▀
+  ▀▀▀   ▀ ████▄ ██▀▄▄█▀ █▀▀▀█▄▄  ▀▄▄█▄▀ █▄█▀▀▀█ ▀▀▀
+  █▀▀▀▀▀█ ▄▀ ▄▀▄▀▄▀▀▀█▀▀█ ▀ █  █▄▀ ▀ █▀▄▀ █ ▀ █▀▀ ▀
+  █ ███ █ █▀  █▀▄█▀█▀▀  ██▀██ ▄▄▄▀████▀▀██████▀▄ ██
+  █ ▀▀▀ █ ▀▀ ██▀█ ▀██▀ ▄▄▀ ▄█▀ ▀▄█ █ ▄█▀ ▄ ▄▄ █ ▀▄▀
+  ▀▀▀▀▀▀▀ ▀  ▀  ▀▀  ▀▀▀▀▀▀▀  ▀ ▀▀     ▀▀   ▀▀▀  ▀▀▀  </pre>
+        <p class="muted" style="margin-top:1.2vh; font-size:1.7vh;">ნამდვილი <code>/qr</code> გამონატანი — დასკანერებადი QR</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 რას იცავს -->
+  <section class="slide">
+    <div class="kicker">გულახდილი შეფასება</div>
+    <h2>რას იცავს OnionChat — და რას არა</h2>
+    <table style="margin-top:1.5vh;">
+      <tr><th>საფრთხე</th><th>პოპულარული მესინჯერი</th><th>OnionChat</th></tr>
+      <tr><td>შენი IP / მდებარეობა</td><td class="cross">სერვერისთვის ღიაა</td><td class="tick">Tor მალავს ✓</td></tr>
+      <tr><td>იდენტობა რეგისტრაციისას</td><td class="cross">ტელეფონის ნომერი</td><td class="tick">მხოლოდ გასაღები ✓</td></tr>
+      <tr><td>სასამართლო / იძულება სერვერზე</td><td class="cross">ერთ კომპანიას ყველაფერი აქვს</td><td class="tick">სერვერი არ არსებობს ✓</td></tr>
+      <tr><td>შესანახი ისტორია</td><td class="cross">ღრუბელი + მოწყობილობა</td><td class="tick">წარმავალი, მეხსიერებაში ✓</td></tr>
+      <tr><td>შეტყობინების შიგთავსი</td><td class="tick">ჩვეულებრივ დაშიფრული</td><td class="tick">დალუქული + ხელმოწერილი ✓</td></tr>
+      <tr><td>გატეხილი ტელეფონი (Pegasus)</td><td class="cross">ყველაფერს კითხულობს</td><td class="warn">ვერცერთი მესინჯერი ვერ აჩერებს — მაგრამ არაფერი ინახება მოსაპარად</td></tr>
+    </table>
+    <p class="muted" style="margin-top:1.5vh; font-size:2vh;">დათმობა: სუფთა P2P მოითხოვს ორივე მხარის ერთდროულ ონლაინობას (Tor ამატებს დაყოვნებას) — ანონიმურობის შეგნებული ფასი.</p>
+  </section>
+
+  <!-- 14 სცადე -->
+  <section class="slide">
+    <div class="kicker">ის მუშაობს — და ღიაა</div>
+    <h2>ორ ნამდვილ ტელეფონზე შემოწმებული, Tor-ით, <span class="accent">სერვერის გარეშე</span></h2>
+    <div class="cols" style="margin-top:1vh;">
+      <div class="col">
+        <ul>
+          <li>Android აპი + ტერმინალის კლიენტი + რელე — ყველა <strong>ღია კოდი</strong>.</li>
+          <li>ავტომატური ტესტები ამტკიცებს, რომ იმიტაცია, გაყალბება და შეცვლა <strong>უარყოფილია</strong>.</li>
+          <li>უსერვერო ტელეფონი↔ტელეფონი <strong>მუშა მდგომარეობაშია ნაჩვენები</strong>.</li>
+        </ul>
+      </div>
+      <div class="col">
+        <div class="card mono" style="font-size:2vh; line-height:1.9;">
+          <div class="muted">// ჩამოტვირთვა და კოდი</div>
+          <div class="accent">github.com/gchiqo/onionchat</div>
+          <div class="accent">github.com/gchiqo/onionchat-relay</div>
+          <div class="muted" style="margin-top:1vh;">releases → APK · CLI · relay</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 15 მადლობა -->
+  <section class="slide" style="align-items:center; text-align:center;">
+    <div class="brandbig"><span class="on">Onion</span>Chat</div>
+    <h2 style="font-weight:600; margin-top:1vh;">აკაუნტების გარეშე. სერვერების გარეშე. ისტორიის გარეშე.</h2>
+    <p class="lead" style="margin:2vh auto 0;">იდენტობა, ავთენტურობა, კონფიდენციალურობა და მიწოდება — ყველა დაფუძნებული საჯარო-გასაღებიან კრიპტოგრაფიასა და Tor-ზე, სადაც არსად არის სანდო სერვერი.</p>
+    <p class="accent" style="margin-top:4vh; font-size:3vh; font-weight:700;">მადლობა · კითხვები?</p>
+    <p class="muted">გიორგი ჩიქოვანი · საქართველოს ტექნიკური უნივერსიტეტი · 2026</p>
+  </section>
+
+</div>
+
+<div class="foot">
+  <span class="brand">OnionChat</span>
+  <span id="counter">1 / 16</span>
+</div>
+<div class="hintkey">← → ან space — ნავიგაცია · გვერდებზე დაწკაპუნება · P — დაბეჭდვა</div>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  let i = 0;
+  const counter = document.getElementById('counter');
+  const progress = document.getElementById('progress');
+  function show(n){
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    counter.textContent = (i + 1) + ' / ' + slides.length;
+    progress.style.width = ((i + 1) / slides.length * 100) + '%';
+    location.hash = i + 1;
+  }
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)) { show(i + 1); e.preventDefault(); }
+    else if (['ArrowLeft','ArrowUp','PageUp'].includes(e.key)) { show(i - 1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'p' || e.key === 'P') window.print();
+  });
+  document.addEventListener('click', e => {
+    if (e.target.closest('a')) return;
+    show(e.clientX < window.innerWidth * 0.28 ? i - 1 : i + 1);
+  });
+  (function drawQr(){
+    const el = document.getElementById('qr1'); if(!el) return;
+    const N = 21, S = 100 / N;
+    let r = 7;
+    const rnd = () => (r = (r * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    let cells = '';
+    const finder = (ox, oy) => {
+      for (let y=0;y<7;y++) for (let x=0;x<7;x++){
+        const edge = x===0||y===0||x===6||y===6, core = x>=2&&x<=4&&y>=2&&y<=4;
+        if (edge||core) cells += `<rect x="${(ox+x)*S}" y="${(oy+y)*S}" width="${S}" height="${S}"/>`;
+      }
+    };
+    for (let y=0;y<N;y++) for (let x=0;x<N;x++){
+      const inF = (x<8&&y<8)||(x>N-9&&y<8)||(x<8&&y>N-9);
+      if (!inF && rnd()>0.55) cells += `<rect x="${x*S}" y="${y*S}" width="${S}" height="${S}"/>`;
+    }
+    finder(0,0); finder(N-7,0); finder(0,N-7);
+    el.innerHTML = `<svg viewBox="0 0 100 100" fill="#0b0912" shape-rendering="crispEdges">${cells}</svg>`;
+  })();
+  window.addEventListener('load', () => { const h = parseInt(location.hash.slice(1)); show(h ? h - 1 : 0); });
+</script>
+</body>
+</html>

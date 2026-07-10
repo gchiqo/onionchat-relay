@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OnionChat — Presentation</title>
+<style>
+  :root{
+    --bg:#0e0b16; --bg2:#161027; --ink:#f4f1fb; --muted:#b3aac9;
+    --accent:#a855f7; --accent2:#7c3aed; --good:#34d399; --bad:#f87171; --warn:#fbbf24;
+    --line:#2a2340; --card:#1a1330;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    overflow:hidden;
+  }
+  .deck{position:relative; width:100vw; height:100vh;}
+  .slide{
+    position:absolute; inset:0; display:none;
+    flex-direction:column; justify-content:center;
+    padding:6vh 8vw; gap:2.2vh;
+    background:radial-gradient(1200px 700px at 80% -10%, #24164a 0%, transparent 55%),
+               radial-gradient(1000px 700px at -10% 110%, #1a1140 0%, transparent 55%),
+               var(--bg);
+    animation:fade .35s ease;
+  }
+  .slide.active{display:flex;}
+  @keyframes fade{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+
+  .kicker{color:var(--accent); font-weight:700; letter-spacing:.12em; text-transform:uppercase; font-size:1.5vh;}
+  h1{font-size:7.5vh; line-height:1.02; font-weight:800; letter-spacing:-.5px;}
+  h2{font-size:5vh; line-height:1.06; font-weight:800; letter-spacing:-.3px;}
+  h3{font-size:3vh; font-weight:700;}
+  p,li{font-size:2.5vh; line-height:1.5; color:var(--ink);}
+  .lead{font-size:3vh; color:var(--muted); max-width:60ch;}
+  .muted{color:var(--muted);}
+  .accent{color:var(--accent);}
+  .good{color:var(--good);} .bad{color:var(--bad);} .warn{color:var(--warn);}
+  strong{color:#fff;}
+  ul{padding-left:0; list-style:none; display:flex; flex-direction:column; gap:1.4vh;}
+  ul li::before{content:"›"; color:var(--accent); font-weight:800; margin-right:.6em;}
+  .cols{display:flex; gap:4vw; align-items:center;}
+  .col{flex:1; min-width:0;}
+  .rule{height:4px; width:120px; background:linear-gradient(90deg,var(--accent),transparent); border-radius:4px;}
+  code,.mono{font-family:"Consolas","SF Mono",ui-monospace,monospace;}
+  .pill{display:inline-block; background:#2a1c4d; color:#d9c8ff; border:1px solid #4a2f80;
+        padding:.35em .8em; border-radius:999px; font-size:1.9vh; font-family:"Consolas",monospace;}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:3vh 3vh;}
+  .cards{display:flex; gap:2vw;}
+  .cards .card{flex:1;}
+  .big{font-size:10vh; font-weight:800; line-height:1; color:var(--accent);}
+
+  table{border-collapse:collapse; width:100%; font-size:2.1vh;}
+  th,td{border-bottom:1px solid var(--line); padding:1.3vh 1vh; text-align:left;}
+  th{color:var(--muted); font-weight:600; font-size:1.8vh; text-transform:uppercase; letter-spacing:.05em;}
+  .tick{color:var(--good); font-weight:800;} .cross{color:var(--bad); font-weight:800;}
+
+  /* phone mockup */
+  .phone{width:26vh; height:53vh; background:#0b0912; border:0.9vh solid #2b2440; border-radius:4vh;
+         box-shadow:0 3vh 6vh rgba(0,0,0,.5), inset 0 0 0 1px #3a3157; overflow:hidden; position:relative; flex:none;}
+  .phone .notch{position:absolute; top:0; left:50%; transform:translateX(-50%); width:34%; height:2.4vh;
+                background:#2b2440; border-radius:0 0 1.4vh 1.4vh; z-index:3;}
+  .scr{position:absolute; inset:0; display:flex; flex-direction:column; font-size:1.7vh;}
+  .appbar{background:#1b1330; padding:3.2vh 1.6vh 1.2vh; display:flex; align-items:center; gap:.7vh; border-bottom:1px solid #2a2340;}
+  .appbar .logo{width:2.4vh; height:2.4vh; border-radius:.5vh; background:linear-gradient(135deg,var(--accent),var(--accent2));}
+  .appbar .t{font-weight:700; font-size:1.9vh;}
+  .appbar .st{font-size:1.2vh; color:var(--good);}
+  .dot{width:1vh; height:1vh; border-radius:50%; background:var(--good); margin-left:auto;}
+  .list{flex:1; overflow:hidden; background:#120f20;}
+  .row{display:flex; align-items:center; gap:1vh; padding:1.3vh 1.6vh; border-bottom:1px solid #201a36;}
+  .av{width:3.4vh; height:3.4vh; border-radius:50%; background:linear-gradient(135deg,#5b2a86,#a855f7); flex:none;}
+  .row .nm{font-weight:600;} .row .pv{font-size:1.3vh; color:var(--muted);}
+  .bubbles{flex:1; background:#120f20; padding:1.4vh; display:flex; flex-direction:column; gap:1vh; justify-content:flex-end;}
+  .b{max-width:75%; padding:1vh 1.3vh; border-radius:1.6vh; font-size:1.5vh; line-height:1.3;}
+  .b.in{background:#241c3e; align-self:flex-start; border-bottom-left-radius:.4vh;}
+  .b.out{background:linear-gradient(135deg,var(--accent2),var(--accent)); align-self:flex-end; border-bottom-right-radius:.4vh; color:#fff;}
+  .inputbar{display:flex; gap:1vh; padding:1.2vh 1.4vh; background:#1b1330; border-top:1px solid #2a2340;}
+  .inputbar .fld{flex:1; background:#0f0c1c; border:1px solid #35294f; border-radius:2vh; padding:.9vh 1.3vh; color:var(--muted); font-size:1.4vh;}
+  .split-top{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1vh; background:#120f20;}
+  .split-bot{flex:1; background:#05040a; display:flex; align-items:center; justify-content:center; position:relative; border-top:2px solid var(--accent);}
+  .split-bot .hint{position:absolute; bottom:1.2vh; font-size:1.3vh; background:#000a; padding:.4vh 1vh; border-radius:1vh;}
+  .scanline{position:absolute; left:12%; right:12%; height:2px; background:var(--accent); box-shadow:0 0 12px var(--accent); top:45%;}
+  .cambox{width:60%; aspect-ratio:1; border:2px solid #ffffff55; border-radius:1.4vh;}
+
+  /* terminal */
+  .terminal{background:#0a0910; border:1px solid #2a2340; border-radius:12px; overflow:hidden; width:100%; box-shadow:0 2vh 5vh rgba(0,0,0,.5);}
+  .terminal .bar{background:#171226; padding:1.1vh 1.4vh; display:flex; gap:.8vh; align-items:center;}
+  .terminal .bar i{width:1.4vh; height:1.4vh; border-radius:50%; display:inline-block;}
+  .terminal .bar .r{background:#ff5f56;} .terminal .bar .y{background:#ffbd2e;} .terminal .bar .g{background:#27c93f;}
+  .terminal .bar span{color:var(--muted); font-size:1.5vh; margin-left:1vh; font-family:monospace;}
+  .terminal pre{padding:2vh 2.2vh; font-family:"Consolas",monospace; font-size:1.75vh; line-height:1.5; color:#d7cff0; white-space:pre-wrap;}
+  .terminal .p{color:var(--accent);} .terminal .gr{color:var(--good);} .terminal .mu{color:#7d7397;}
+  .qrterm{background:#fff; color:#000; font-family:"Consolas",monospace; font-size:1.15vh; line-height:.92;
+          padding:1.6vh; border-radius:1.2vh; white-space:pre; box-shadow:0 2vh 5vh rgba(0,0,0,.5);}
+
+  /* tor diagram nodes */
+  .flow{display:flex; align-items:center; gap:1.2vw; flex-wrap:wrap;}
+  .node{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1.6vh 1.8vh; text-align:center; font-size:1.9vh; min-width:11vh;}
+  .node .ic{font-size:3.4vh;}
+  .node.you{border-color:var(--accent);}
+  .node.hop{border-style:dashed; border-color:#4a3a7a;}
+  .arrow{color:var(--accent); font-size:3vh;}
+  .lock{color:var(--good);}
+
+  /* qr mock */
+  .qr{width:20vh; height:20vh; background:#fff; border-radius:1.5vh; padding:1.5vh;}
+  .qr svg{width:100%; height:100%; display:block;}
+
+  .foot{position:fixed; bottom:2.4vh; left:8vw; right:8vw; display:flex; justify-content:space-between;
+        align-items:center; color:var(--muted); font-size:1.6vh; z-index:20;}
+  .foot .brand{font-weight:700; color:var(--accent);}
+  .progress{position:fixed; top:0; left:0; height:4px; background:linear-gradient(90deg,var(--accent),var(--accent2)); z-index:30; transition:width .3s;}
+  .hintkey{position:fixed; bottom:2.4vh; left:50%; transform:translateX(-50%); color:#6d6488; font-size:1.4vh; z-index:20;}
+
+  /* title slide */
+  .title-wrap{align-items:flex-start;}
+  .brandbig{font-size:12vh; font-weight:800; letter-spacing:-2px; line-height:1;}
+  .brandbig .on{color:var(--accent);}
+  .onionpill{margin-top:2vh;}
+
+  @media print{
+    body{overflow:visible;}
+    .slide{display:flex !important; position:relative; inset:auto; height:100vh; page-break-after:always; animation:none;}
+    .foot,.hintkey,.progress{position:static;}
+    @page{size:landscape;}
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="deck" id="deck">
+
+  <!-- 1 TITLE -->
+  <section class="slide title-wrap">
+    <div class="kicker">Bachelor's Thesis · Cybersecurity</div>
+    <div class="brandbig"><span class="on">Onion</span>Chat</div>
+    <h3 class="muted" style="font-weight:500; max-width:24ch;">A serverless, anonymous, ephemeral messenger over Tor v3 onion services</h3>
+    <div class="onionpill pill">identity = base32( ed25519_key ) .onion  ·  no accounts · no servers</div>
+    <div style="margin-top:3vh;">
+      <p><strong>Giorgi Chikovani</strong> <span class="muted">· Supervisor: Mariam Chkhaidze</span></p>
+      <p class="muted">Georgian Technical University · 2026</p>
+    </div>
+  </section>
+
+  <!-- 2 NORMAL WEB -->
+  <section class="slide">
+    <div class="kicker">How the internet you use works</div>
+    <h2>Every message you send is stamped with <span class="accent">your address</span></h2>
+    <div class="cols">
+      <div class="col">
+        <div class="flow" style="margin:2vh 0;">
+          <div class="node you"><div class="ic">📱</div>You<br><span class="mono muted" style="font-size:1.5vh;">IP 31.146.x.x</span></div>
+          <span class="arrow">──▶</span>
+          <div class="node"><div class="ic">🌐</div>Server<br><span class="muted" style="font-size:1.5vh;">app / website</span></div>
+        </div>
+        <ul>
+          <li>Your <strong>IP address</strong> reveals who and roughly <strong>where</strong> you are.</li>
+          <li>The server sees <strong>your identity, your location, and everyone you talk to</strong>.</li>
+          <li>Your provider (and anyone in between) sees <strong>which servers you connect to</strong>.</li>
+        </ul>
+      </div>
+      <div class="col">
+        <div class="card">
+          <p class="muted" style="font-size:2vh;">A phone number, an IP, and a company database in the middle —</p>
+          <h3 style="margin-top:1.5vh;">that's an <span class="bad">identity trail</span> by design.</h3>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 TOR -->
+  <section class="slide">
+    <div class="kicker">The fix for location · Tor</div>
+    <h2>Tor hides <span class="accent">where you are</span> by bouncing through three relays</h2>
+    <div class="flow" style="margin:3vh 0;">
+      <div class="node you"><div class="ic">📱</div>You</div>
+      <span class="arrow lock">🔒▶</span>
+      <div class="node hop"><div class="ic">🧅</div>Guard</div>
+      <span class="arrow lock">🔒▶</span>
+      <div class="node hop"><div class="ic">🧅</div>Middle</div>
+      <span class="arrow lock">🔒▶</span>
+      <div class="node hop"><div class="ic">🧅</div>Exit</div>
+      <span class="arrow">──▶</span>
+      <div class="node"><div class="ic">🌐</div>Destination</div>
+    </div>
+    <ul>
+      <li>Traffic is wrapped in <strong>layers of encryption</strong> — peeled one relay at a time (an "onion").</li>
+      <li><strong>No single relay knows both</strong> who you are <em>and</em> where you're going.</li>
+      <li>The destination sees a Tor exit — <strong>never your real IP</strong>.</li>
+    </ul>
+  </section>
+
+  <!-- 4 ENCRYPTION ILLUSION -->
+  <section class="slide">
+    <div class="kicker">The comfortable lie</div>
+    <h2>"But it's <span class="accent">end-to-end encrypted</span> …"</h2>
+    <div class="cols">
+      <div class="col">
+        <div class="card" style="border-color:#2f6b4d;">
+          <h3 class="good">✓ What encryption protects</h3>
+          <p class="muted" style="margin-top:1.2vh;">The <strong>content</strong> of a message, while it travels between two phones.</p>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card" style="border-color:#6b2f3a;">
+          <h3 class="bad">✗ What it does NOT protect</h3>
+          <ul style="margin-top:1.2vh; gap:.9vh;">
+            <li><strong>Who</strong> you are (phone number, IP)</li>
+            <li><strong>Who</strong> you talk to and <strong>when</strong> (metadata)</li>
+            <li>A <strong>company server</strong> that can be subpoenaed</li>
+            <li>A <strong>compromised phone</strong> that reads the screen</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <p class="lead" style="margin-top:1vh;">Encryption secures the <em>letter</em> — not the <em>envelope</em>, the <em>post office</em>, or the <em>reader looking over your shoulder</em>.</p>
+  </section>
+
+  <!-- 5 TELEGRAM -->
+  <section class="slide">
+    <div class="kicker">Case 1 · Telegram</div>
+    <h2>"Encrypted" — yet it hands your <span class="bad">IP and phone number</span> to police</h2>
+    <div class="cols">
+      <div class="col">
+        <ul>
+          <li>Telegram chats are <strong>not end-to-end encrypted by default</strong> — only opt-in "Secret Chats" are.</li>
+          <li>Everything else lives on <strong>Telegram's servers</strong>, which hold the keys.</li>
+          <li><strong>September 2024:</strong> after its CEO's arrest, Telegram's policy now <strong class="bad">shares users' IP address and phone number with authorities</strong> on valid legal requests.</li>
+        </ul>
+      </div>
+      <div class="col">
+        <div class="card">
+          <div class="big">IP + ☎</div>
+          <p class="muted" style="margin-top:1.5vh;">Two data points that turn an "anonymous" account into a <strong>name and a home address</strong>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 WHATSAPP / PEGASUS -->
+  <section class="slide">
+    <div class="kicker">Case 2 · WhatsApp &amp; Pegasus</div>
+    <h2>Perfect encryption is <span class="bad">useless</span> when the phone itself is hacked</h2>
+    <div class="cols">
+      <div class="col">
+        <ul>
+          <li>WhatsApp encrypts <strong>content</strong> end-to-end (the Signal protocol) — genuinely good.</li>
+          <li>But <strong>Pegasus</strong> (NSO Group) is <strong>zero-click spyware</strong> that takes over the phone's OS and reads messages <strong class="bad">after they're decrypted</strong> — plus mic, camera, screen.</li>
+          <li>In <strong>2019</strong> it was delivered through a single <strong>WhatsApp call</strong>. The encryption was never broken — it was <strong>bypassed</strong>.</li>
+        </ul>
+      </div>
+      <div class="col">
+        <div class="card" style="border-color:#6b2f3a;">
+          <h3>🔓 The lesson</h3>
+          <p style="margin-top:1.4vh;">If the <strong>endpoint</strong> or the <strong>company</strong> is the weak point, end-to-end encryption <span class="bad">alone doesn't save you</span>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 THE REAL PROBLEM -->
+  <section class="slide">
+    <div class="kicker">The pattern</div>
+    <h2>Three weaknesses <span class="accent">every mainstream messenger</span> shares</h2>
+    <div class="cards" style="margin-top:2vh;">
+      <div class="card">
+        <div class="big">1</div>
+        <h3 style="margin-top:1vh;">Identity = a phone number</h3>
+        <p class="muted" style="margin-top:1vh;">Tied to your real name, SIM, and IP. Registration <em>is</em> deanonymisation.</p>
+      </div>
+      <div class="card">
+        <div class="big">2</div>
+        <h3 style="margin-top:1vh;">A central server</h3>
+        <p class="muted" style="margin-top:1vh;">A single company that can be subpoenaed, coerced, hacked, or shut down.</p>
+      </div>
+      <div class="card">
+        <div class="big">3</div>
+        <h3 style="margin-top:1vh;">Permanent history</h3>
+        <p class="muted" style="margin-top:1vh;">Stored on servers and phones — waiting to be seized.</p>
+      </div>
+    </div>
+    <p class="lead" style="margin-top:2vh;">Encryption fixes <strong>none</strong> of these. So the architecture has to change.</p>
+  </section>
+
+  <!-- 8 ONION SERVICES -->
+  <section class="slide">
+    <div class="kicker">The other half of Tor</div>
+    <h2>Onion services: two people meet with <span class="accent">no server and no IPs</span></h2>
+    <div class="flow" style="margin:2.5vh 0;">
+      <div class="node you"><div class="ic">📱</div>Alice</div>
+      <span class="arrow lock">🔒▶</span>
+      <div class="node hop"><div class="ic">🧅</div>Tor</div>
+      <span class="arrow lock">◀🔒</span>
+      <div class="node you"><div class="ic">📱</div>Bob</div>
+    </div>
+    <ul>
+      <li>Each device is reachable at a <span class="pill">…56 chars….onion</span> address.</li>
+      <li>The address <strong>is a public key</strong> — so it's <strong>self-authenticating</strong>: no certificate, no authority.</li>
+      <li>They connect through Tor <strong>without either learning the other's IP</strong>, and <strong>without any server in between</strong>.</li>
+    </ul>
+  </section>
+
+  <!-- 9 ONIONCHAT IDEA -->
+  <section class="slide" style="align-items:flex-start;">
+    <div class="kicker">The idea</div>
+    <h1>What if your identity was a <span class="accent">key</span>,<br>not a phone number?</h1>
+    <div class="cards" style="margin-top:3vh; width:100%;">
+      <div class="card"><h3>🔑 No accounts</h3><p class="muted" style="margin-top:.8vh;">Your ID is a Tor onion derived from your key.</p></div>
+      <div class="card"><h3>🌐 No servers</h3><p class="muted" style="margin-top:.8vh;">Phones talk directly over Tor.</p></div>
+      <div class="card"><h3>💨 No history</h3><p class="muted" style="margin-top:.8vh;">Messages live in memory, erased on exit.</p></div>
+      <div class="card"><h3>🧅 No IP leaks</h3><p class="muted" style="margin-top:.8vh;">Everything rides Tor — location hidden.</p></div>
+    </div>
+  </section>
+
+  <!-- 10 HOW IT WORKS -->
+  <section class="slide">
+    <div class="kicker">How OnionChat works</div>
+    <h2>Identity · Encryption · Transport</h2>
+    <div class="cols" style="margin-top:1vh;">
+      <div class="col">
+        <ul>
+          <li><strong>Identity</strong> — an Ed25519 key → a Tor v3 <span class="mono">.onion</span>. The address <em>is</em> the identity; verifying a signature against it proves the sender. No PKI.</li>
+          <li><strong>Encryption</strong> — every message is a <strong>sealed box</strong>: fresh X25519 key exchange → AES-256-GCM, then signed. Confidential, authentic, forward-secret.</li>
+          <li><strong>Transport</strong> — direct P2P: each phone hosts its own onion and dials the contact. Optional untrusted relay adds offline delivery — it only ever sees ciphertext.</li>
+          <li><strong>Ephemeral</strong> — conversations never touch disk.</li>
+        </ul>
+      </div>
+      <div class="col">
+        <div class="card mono" style="font-size:1.9vh; line-height:1.7;">
+          <div class="muted">// sent over the wire</div>
+          <div><span class="accent">Seal</span>( <span class="accent">Sign</span>( message ) )</div>
+          <div style="margin-top:1.5vh;" class="muted">// the relay (if any) sees only</div>
+          <div>opaque ciphertext →</div>
+          <div>routed by label, never read</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 SCREENSHOTS -->
+  <section class="slide">
+    <div class="kicker">The app · Android</div>
+    <h2>Add each other face-to-face, then chat</h2>
+    <div class="cols" style="gap:3vw; margin-top:1vh; align-items:center; justify-content:center;">
+      <!-- pairing -->
+      <div style="text-align:center;">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="scr">
+            <div class="appbar"><div class="logo"></div><div><div class="t">Add contact</div></div></div>
+            <div class="split-top">
+              <div class="muted" style="font-size:1.4vh;">Show this to your friend</div>
+              <div class="qr" id="qr1"></div>
+            </div>
+            <div class="split-bot">
+              <div class="cambox"></div><div class="scanline"></div>
+              <div class="hint muted">Scan your friend's code</div>
+            </div>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:1.2vh; font-size:1.8vh;">Split-screen QR pairing</p>
+      </div>
+      <!-- chat -->
+      <div style="text-align:center;">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="scr">
+            <div class="appbar"><div class="logo"></div><div><div class="t">alice</div></div><div class="dot"></div></div>
+            <div class="bubbles">
+              <div class="b in">hey alice, bob here over tor 👋</div>
+              <div class="b out">hi bob! nothing but our two phones 🎉</div>
+              <div class="b in">is this really end-to-end encrypted?</div>
+              <div class="b out">yep — a fresh sealed box per message</div>
+            </div>
+            <div class="inputbar"><div class="fld">Message</div></div>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:1.2vh; font-size:1.8vh;">Direct P2P chat — no relay</p>
+      </div>
+      <!-- home/status -->
+      <div style="text-align:center;">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="scr">
+            <div class="appbar"><div class="logo"></div><div><div class="t">OnionChat</div><div class="st">Reachable ✓</div></div><div class="dot"></div></div>
+            <div class="list">
+              <div class="row"><div class="av"></div><div><div class="nm">alice</div><div class="pv">yep — a fresh sealed box…</div></div></div>
+              <div class="row"><div class="av"></div><div><div class="nm">carol</div><div class="pv">djilkncaaz…onion</div></div></div>
+              <div class="row"><div class="av"></div><div><div class="nm">dave</div><div class="pv">see you tomorrow</div></div></div>
+            </div>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:1.2vh; font-size:1.8vh;">Live status: <span class="good">Reachable ✓</span></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 CLI -->
+  <section class="slide">
+    <div class="kicker">Same protocol · the terminal</div>
+    <h2>It also runs in a <span class="accent">terminal</span> — phone ⇄ laptop</h2>
+    <div class="cols">
+      <div class="col" style="flex:1.4;">
+        <div class="terminal">
+          <div class="bar"><i class="r"></i><i class="y"></i><i class="g"></i><span>onionchat — alice@laptop</span></div>
+<pre><span class="mu">== OnionChat — terminal client · alice ==</span>
+<span class="gr">HOSTING in THIS process — no separate relay needed.</span>
+  Peers connect with:  --relay …:9994
+<span class="p">&gt;</span> * connected
+<span class="mu">· relay [+] fmql26yy7t… online (2 connected)</span>
+bob <span class="mu">[fmql26yy7t…]</span>: hey alice, bob here over tor 👋
+<span class="p">you</span> -&gt; <span class="mu">fmql26yy7t…</span>: hi bob! nothing but our two terminals 🎉
+bob <span class="mu">[fmql26yy7t…]</span>: is this really end-to-end encrypted?
+<span class="p">you</span> -&gt; <span class="mu">fmql26yy7t…</span>: yep — a fresh sealed box per message
+<span class="gr">✓ every line: sealed box · signature verified</span></pre>
+        </div>
+      </div>
+      <div class="col">
+        <ul>
+          <li>One shared protocol core → <strong>phone and terminal interoperate</strong>.</li>
+          <li>Runs on <strong>Linux · macOS · Windows · Termux · FreeBSD</strong>.</li>
+          <li>Any client can even <strong>host the relay itself</strong> — nothing else to run.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12b TERMINAL QR (real /qr output) -->
+  <section class="slide">
+    <div class="kicker">The terminal · your identity</div>
+    <h2>Your identity <span class="accent">is a QR</span> — even in a plain terminal</h2>
+    <div class="cols" style="margin-top:1vh;">
+      <div class="col">
+        <div class="terminal">
+          <div class="bar"><i class="r"></i><i class="y"></i><i class="g"></i><span>onionchat — /me</span></div>
+<pre><span class="p">&gt;</span> /me
+handle : alice
+onion  : s7f3t35lhiezq5bb2hoevvywnb5zcszz
+         riiaxljqwgmvxe4nizkec5id.onion
+x25519 : 6teOoNYyMJcJfh50J2vgeKIwAdFoak…
+<span class="mu">share  : /add s7f3t35lhi…onion 6teOo… alice</span></pre>
+        </div>
+        <ul style="margin-top:2.2vh;">
+          <li>The whole identity is <strong>one Ed25519 key</strong> → an onion address + an encryption key.</li>
+          <li>A friend scans it <strong>straight off the screen</strong> to add you — no server, no lookup.</li>
+        </ul>
+      </div>
+      <div class="col" style="flex:none; text-align:center;">
+<pre class="qrterm">  █▀▀▀▀▀█  ▀ ▄  ▀▄▄▀ ▀▀▄▄█▄▀▀▀█▀▄▄█▄▀▄ █▄▄█ █▀▀▀▀▀█
+  █ ███ █ ██▀▄▄▄█▀█ ▄ ▀▄▄▄▀▄▄▄▄▀▀ █ ▄▀▄▄ █▀ █ ███ █
+  █ ▀▀▀ █ █▀ ▄▀▀█▀ █▄▀█ █▀▀▀█▀ ██▄ ▄ ▄▄ ▄   █ ▀▀▀ █
+  ▀▀▀▀▀▀▀ █ ▀ █▄▀ ▀ █▄█ █ ▀ █ ▀▄█ █ ▀▄▀▄▀ ▀ ▀▀▀▀▀▀▀
+  █▄▀█▀▀▀ ▄▄█   ▀  ▀  █▀▀▀▀▀▀ ▄  ▀█▀█▀▀▀█ ▄ ▀▀▀▀▀
+   █ ▄ ▄▀█▄█▀█▀ ▀ █▀▄█▀▀█▀ ▄▀█▄▀██   █▀▄ ▄▀██▀▄██▄
+  ▄▄▄▀█ ▀▀█▀▀▄██▀▀█  ▀ ▄▀▀█ ██▄▀▄ ██▄▄▀▄▄ █▄ █▄▄ █▀
+   ▄▀█▄ ▀▄▀▄▄▄▄██▀▄ ▄▀ ▄ █▀█    ▄█ █▀▄█ ▀▀▀▄▄ ▄▄▀▄
+  ▀▀▀▀ █▀▀▄▄█▄ ▀▄▄ █▄█▀  ▀ █▀▀ ▀█▄ ▄ ▄█  ▄ ▀▄▄█▀ ▀▀
+   ▄█▀  ▀█▀  ▀ ▀▀  █ █  ▀██▀▀▀▄██  ▄  ▀▄ ▀▀▄▄█▄▀█▄
+  ▄▄██▀█▀▀▀▄▄▄ ▀ █ ▀▀▄▄▀▀▀▀▀ █▀▀ ▄▄▄▀ ▄██▄ █▄▀█ ▀▀█
+  ▄█▄▄█▀▀▀██▀█▄▄ ██ ██▀▄█▀▀▀█ ▄▄▄   ▀█▀▄ ▀█▀▀▀██▀▀
+  ▀█ ▄█ ▀ █ ▄▀▄▄█▄███▄█▄█ ▀ ██▄▀ █▄ ▀█▀▄█▄█ ▀ █ ▀██
+   ▀▀██▀▀▀▀▀█▀ ▀█ ▀█ ▄▀█████▀▄▄▄▄  ▀▀▀▀▄ ▄█▀██▀█▀█▀
+  ▀█▀ ██▀▄▀▀█▀▄ ▄█▀▄▄▄▄▄▀▀█▀▄█▄█▄ █▀▀▀▀▀▄██▀██  ▀ █
+    ▄█▄ ▀▄▀▄▄   ▀▀▄ █▄█▀▄▀█ ▀▄ ▄ ▀ ▀█▀██▄▀█▄ █   ▀▀
+  ▀    ▀▀▄█▄█  ▀█▄▄▀ ▀▄ ▀▄█▀▄▄█▄ ▀█▀█▀ ▄█▄▄▀▀▄▄▀▀▄
+  ███▄▄▀▀▄▀▀▀▀▄██▄ █ █▀█▀▄▄▀  ▀▄██▀█ █▄▄ █▀▄▀█▀▀███
+  ▄▄▀█▄▄▀█▄▄▀█▀▀▀▄█ ▄▄█ █▄ ▀ ▄▄▀▄█▄ ▀▀▄▀▀ ▄▀▀ █▀▀██
+   █▄▄ ▀▀▀ ▄██ ▀▀██ ▀▄▀█▄ ▄▄   ██▄   ███▀█ ▄▄█▀▄▀ ▀
+  ▀▀▀   ▀ ████▄ ██▀▄▄█▀ █▀▀▀█▄▄  ▀▄▄█▄▀ █▄█▀▀▀█ ▀▀▀
+  █▀▀▀▀▀█ ▄▀ ▄▀▄▀▄▀▀▀█▀▀█ ▀ █  █▄▀ ▀ █▀▄▀ █ ▀ █▀▀ ▀
+  █ ███ █ █▀  █▀▄█▀█▀▀  ██▀██ ▄▄▄▀████▀▀██████▀▄ ██
+  █ ▀▀▀ █ ▀▀ ██▀█ ▀██▀ ▄▄▀ ▄█▀ ▀▄█ █ ▄█▀ ▄ ▄▄ █ ▀▄▀
+  ▀▀▀▀▀▀▀ ▀  ▀  ▀▀  ▀▀▀▀▀▀▀  ▀ ▀▀     ▀▀   ▀▀▀  ▀▀▀  </pre>
+        <p class="muted" style="margin-top:1.2vh; font-size:1.7vh;">real <code>/qr</code> output — a scannable QR</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 WHAT IT PROTECTS -->
+  <section class="slide">
+    <div class="kicker">Honest evaluation</div>
+    <h2>What OnionChat protects — and what it doesn't</h2>
+    <table style="margin-top:1.5vh;">
+      <tr><th>Threat</th><th>Mainstream messenger</th><th>OnionChat</th></tr>
+      <tr><td>Your IP / location</td><td class="cross">exposed to the server</td><td class="tick">hidden by Tor ✓</td></tr>
+      <tr><td>Identity at signup</td><td class="cross">phone number</td><td class="tick">just a key ✓</td></tr>
+      <tr><td>Server subpoena / coercion</td><td class="cross">one company holds everything</td><td class="tick">no server to subpoena ✓</td></tr>
+      <tr><td>Stored history to seize</td><td class="cross">cloud + device</td><td class="tick">ephemeral, in memory ✓</td></tr>
+      <tr><td>Message content</td><td class="tick">usually encrypted</td><td class="tick">sealed + signed ✓</td></tr>
+      <tr><td>Compromised phone (Pegasus)</td><td class="cross">reads everything</td><td class="warn">no messenger can stop this — but nothing is stored to harvest</td></tr>
+    </table>
+    <p class="muted" style="margin-top:1.5vh; font-size:2vh;">Trade-off: pure P2P needs both peers online at once (Tor adds latency) — the deliberate price of anonymity.</p>
+  </section>
+
+  <!-- 14 TRY IT -->
+  <section class="slide">
+    <div class="kicker">It works — and it's open</div>
+    <h2>Validated on two real phones, over Tor, <span class="accent">no server</span></h2>
+    <div class="cols" style="margin-top:1vh;">
+      <div class="col">
+        <ul>
+          <li>Android app + terminal client + relay — all <strong>open source</strong>.</li>
+          <li>Automated tests prove impersonation, tampering and forgery are <strong>rejected</strong>.</li>
+          <li>Serverless phone↔phone <strong>demonstrated working</strong>.</li>
+        </ul>
+      </div>
+      <div class="col">
+        <div class="card mono" style="font-size:2vh; line-height:1.9;">
+          <div class="muted">// download &amp; source</div>
+          <div class="accent">github.com/gchiqo/onionchat</div>
+          <div class="accent">github.com/gchiqo/onionchat-relay</div>
+          <div class="muted" style="margin-top:1vh;">releases → APK · CLI · relay</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 15 THANKS -->
+  <section class="slide" style="align-items:center; text-align:center;">
+    <div class="brandbig"><span class="on">Onion</span>Chat</div>
+    <h2 style="font-weight:600; margin-top:1vh;">No accounts. No servers. No history.</h2>
+    <p class="lead" style="margin:2vh auto 0;">Identity, authenticity, confidentiality and delivery — all grounded in public-key cryptography and Tor, with no trusted server anywhere.</p>
+    <p class="accent" style="margin-top:4vh; font-size:3vh; font-weight:700;">Thank you · Questions?</p>
+    <p class="muted">Giorgi Chikovani · Georgian Technical University · 2026</p>
+  </section>
+
+</div>
+
+<div class="foot">
+  <span class="brand">OnionChat</span>
+  <span id="counter">1 / 15</span>
+</div>
+<div class="hintkey">← → or space to navigate · click sides · P to print</div>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  let i = 0;
+  const counter = document.getElementById('counter');
+  const progress = document.getElementById('progress');
+  function show(n){
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    counter.textContent = (i + 1) + ' / ' + slides.length;
+    progress.style.width = ((i + 1) / slides.length * 100) + '%';
+    location.hash = i + 1;
+  }
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)) { show(i + 1); e.preventDefault(); }
+    else if (['ArrowLeft','ArrowUp','PageUp'].includes(e.key)) { show(i - 1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'p' || e.key === 'P') window.print();
+  });
+  document.addEventListener('click', e => {
+    if (e.target.closest('a')) return;
+    show(e.clientX < window.innerWidth * 0.28 ? i - 1 : i + 1);
+  });
+  // draw a stylized QR (finder squares + scattered modules) into #qr1
+  (function drawQr(){
+    const el = document.getElementById('qr1'); if(!el) return;
+    const N = 21, S = 100 / N;
+    let r = 7;
+    const rnd = () => (r = (r * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    let cells = '';
+    const finder = (ox, oy) => {
+      for (let y=0;y<7;y++) for (let x=0;x<7;x++){
+        const edge = x===0||y===0||x===6||y===6, core = x>=2&&x<=4&&y>=2&&y<=4;
+        if (edge||core) cells += `<rect x="${(ox+x)*S}" y="${(oy+y)*S}" width="${S}" height="${S}"/>`;
+      }
+    };
+    for (let y=0;y<N;y++) for (let x=0;x<N;x++){
+      const inF = (x<8&&y<8)||(x>N-9&&y<8)||(x<8&&y>N-9);
+      if (!inF && rnd()>0.55) cells += `<rect x="${x*S}" y="${y*S}" width="${S}" height="${S}"/>`;
+    }
+    finder(0,0); finder(N-7,0); finder(0,N-7);
+    el.innerHTML = `<svg viewBox="0 0 100 100" fill="#0b0912" shape-rendering="crispEdges">${cells}</svg>`;
+  })();
+  window.addEventListener('load', () => { const h = parseInt(location.hash.slice(1)); show(h ? h - 1 : 0); });
+</script>
+</body>
+</html>

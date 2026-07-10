@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OnionChat — Bachelor's Thesis — Giorgi Chikovani</title>
+<style>
+  /* ---------- print / page setup (regulation: A4, 30mm left, 20mm others) ---------- */
+  @page { size: A4; margin: 20mm 20mm 18mm 30mm; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }
+
+  :root{
+    --ink:#17141f;          /* near-black, faint purple tint */
+    --muted:#5b5570;
+    --accent:#6d28d9;       /* violet 700 */
+    --accent-deep:#4c1d95;  /* violet 900 */
+    --accent-soft:#ede9fe;  /* violet 100 */
+    --line:#d9d3e8;
+    --code-bg:#1e1b2e;      /* dark code card */
+    --code-fg:#e8e3f5;
+  }
+
+  /* ---------- base text (regulation: Sylfaen 12, 1.5 spacing) ---------- */
+  body{
+    font-family:"Sylfaen", serif; font-size:12pt; line-height:1.5;
+    color:var(--ink); text-align:justify; margin:0;
+  }
+  p{ margin:0 0 10pt; }
+  strong{ color:var(--accent-deep); }
+  em{ color:#2a2440; }
+  a{ color:var(--accent); text-decoration:none; }
+
+  /* ---------- headings ---------- */
+  h2,h3,h4{ font-family:"Sylfaen", serif; line-height:1.25; text-align:left; color:var(--ink); }
+  h2{
+    font-size:15.5pt; margin:0 0 12pt; padding:0 0 5pt;
+    border-bottom:2.4pt solid var(--accent);
+    break-before:page; page-break-before:always;
+  }
+  h2 .num{ color:var(--accent); font-weight:700; margin-right:7pt; }
+  h2.nobreak{ break-before:auto; page-break-before:auto; }
+  h3{ font-size:12.8pt; margin:16pt 0 5pt; color:var(--accent-deep); }
+  h4{ font-size:12pt; font-style:italic; margin:12pt 0 4pt; color:var(--muted); }
+
+  /* ---------- code ---------- */
+  pre{
+    font-family:"Consolas","Courier New",monospace; font-size:10pt; line-height:1.4;
+    background:var(--code-bg); color:var(--code-fg);
+    border-radius:7px; border-left:4px solid var(--accent);
+    padding:11px 13px; white-space:pre-wrap; overflow-wrap:anywhere;
+    margin:6pt 0 4pt;
+  }
+  code{ font-family:"Consolas","Courier New",monospace; font-size:10.5pt;
+        background:var(--accent-soft); color:var(--accent-deep);
+        padding:0.5px 4px; border-radius:4px; }
+  pre code{ background:none; color:inherit; padding:0; }
+
+  /* ---------- tables ---------- */
+  table{ border-collapse:collapse; width:100%; font-size:10.5pt; margin:6pt 0 10pt; line-height:1.3; }
+  th,td{ border:1px solid var(--line); padding:6px 9px; text-align:left; vertical-align:top; }
+  thead th, table tr:first-child th{
+    background:var(--accent); color:#fff; border-color:var(--accent);
+    font-weight:700; letter-spacing:.2px;
+  }
+  tbody tr:nth-child(even) td, table tr:nth-child(even) td{ background:#faf8ff; }
+
+  /* ---------- figure / caption ---------- */
+  .fig{
+    background:#faf8ff; border:1px solid var(--line); border-radius:8px;
+    padding:10px 12px; margin:8pt 0 4pt;
+  }
+  .fig pre{ background:none; color:#2a2440; border:0; padding:0; font-size:9pt; }
+  .caption{ font-size:10pt; font-style:italic; color:var(--muted); text-align:center; margin:3pt 0 12pt; }
+
+  /* ---------- abstract / callout cards ---------- */
+  .card{
+    background:var(--accent-soft); border:1px solid #cdbef0; border-radius:9px;
+    padding:13px 16px; margin:0 0 12pt;
+  }
+  .keywords{ font-size:10.5pt; color:var(--muted); margin-top:8pt; }
+  .keywords b{ color:var(--accent-deep); }
+
+  ol,ul{ margin:0 0 10pt; padding-left:22pt; }
+  li{ margin:0 0 4pt; }
+  .small{ font-size:10pt; }
+
+  /* ---------- TOC ---------- */
+  .toc{ font-size:11pt; line-height:1.7; }
+  .toc .l1{ font-weight:700; color:var(--accent-deep); }
+  .toc .l2{ padding-left:18pt; color:var(--ink); }
+  .toc .l1, .toc .l2{ display:block; }
+
+  /* ================= TITLE PAGE ================= */
+  .cover{ break-after:page; page-break-after:always; text-align:center; padding-top:6mm; }
+  .cover .uni{ font-size:12.5pt; color:var(--muted); line-height:1.5; }
+  .cover .uni b{ color:var(--ink); }
+  .cover .rule{ height:3px; width:62%; margin:26mm auto 0;
+                background:linear-gradient(90deg,transparent,var(--accent),transparent); }
+  .cover .brand{
+    font-size:46pt; font-weight:800; letter-spacing:-1px; margin:7mm 0 0;
+    color:var(--accent-deep);
+  }
+  .cover .brand .on{ color:var(--accent); }
+  .cover .subtitle{ font-size:14pt; font-style:italic; color:var(--ink);
+                    margin:5mm auto 0; max-width:80%; line-height:1.45; }
+  .cover .onionline{
+    font-family:"Consolas","Courier New",monospace; font-size:9.5pt;
+    color:var(--accent); background:var(--accent-soft);
+    display:inline-block; padding:6px 12px; border-radius:20px; margin-top:7mm;
+    border:1px solid #cdbef0; word-break:break-all;
+  }
+  .cover .rule2{ height:3px; width:62%; margin:7mm auto 0;
+                 background:linear-gradient(90deg,transparent,var(--accent),transparent); }
+  .cover .kind{ font-size:13pt; color:var(--ink); margin-top:9mm; letter-spacing:.5px; }
+  .cover .meta{
+    margin:24mm auto 0; width:75%; font-size:12pt; text-align:left;
+    border-top:1px solid var(--line);
+  }
+  .cover .meta .row{ display:flex; justify-content:space-between;
+                     padding:7px 2px; border-bottom:1px solid var(--line); }
+  .cover .meta .row span:first-child{ color:var(--muted); }
+  .cover .meta .row span:last-child{ color:var(--ink); font-weight:600; }
+  .cover .place{ margin-top:12mm; font-size:12pt; color:var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<section class="cover">
+  <div class="uni">
+    <b>Georgian Technical University</b><br>
+    Faculty of Informatics and Control Systems<br>
+    Computer Science Program · Artificial Intelligence Department
+  </div>
+
+  <div class="rule"></div>
+  <div class="brand"><span class="on">Onion</span>Chat</div>
+  <div class="subtitle">A Serverless, Anonymous, Ephemeral Messaging System<br>over Tor v3 Onion Services</div>
+  <div class="onionline">id = base32( ed25519_pubkey ‖ checksum ‖ 0x03 ).onion</div>
+  <div class="rule2"></div>
+
+  <div class="kind">BACHELOR'S THESIS</div>
+
+  <div class="meta">
+    <div class="row"><span>Author</span><span>Giorgi Chikovani</span></div>
+    <div class="row"><span>Supervisor</span><span>Mariam Chkhaidze</span></div>
+    <div class="row"><span>Category</span><span>Cybersecurity · Secure Communication</span></div>
+    <div class="row"><span>Source code</span><span>github.com/gchiqo/onionchat-relay</span></div>
+  </div>
+
+  <div class="place">Tbilisi · 2026</div>
+</section>
+
+<!-- ================= ABSTRACT ================= -->
+<h2 class="nobreak"><span class="num">·</span>Abstract</h2>
+<div class="card">
+<p style="margin:0">Mainstream instant-messaging applications require a phone number or an account, route every message through a provider's servers, and retain identity and traffic metadata that can deanonymise their users. This thesis presents <strong>OnionChat</strong>, an Android messaging system that removes the account, the trusted server, and the message history from the architecture entirely.</p>
+</div>
+<p>Each user's identity is a <em>self-authenticating</em> Tor v3 <code>.onion</code> address derived deterministically from an Ed25519 public key, so possession of the key &mdash; and nothing registered with any authority &mdash; proves who a user is. Messages are protected end-to-end with an ephemeral-X25519 / AES-256-GCM sealed box and are signed inside the envelope, so the sender is cryptographically authenticated without any public-key infrastructure. Transport runs over the Tor network in one of two modes. In the default <em>direct</em> mode each device hosts its own v3 onion service &mdash; published on the identity key, so the address is the same one shared in the QR code &mdash; and peers connect to one another with no server whatsoever; this was validated on two physical phones once a subtle failure was diagnosed (a hidden service is not reachable until its descriptor has been uploaded, which happens asynchronously <em>after</em> the Tor client bootstraps). For offline delivery, an optional, <em>untrusted</em> relay publishes a v3 onion service and blindly stores-and-forwards opaque ciphertext between peers, learning neither the content nor the long-term social graph beyond routing labels. Conversations are <em>ephemeral</em>: they live only in volatile memory and are erased when the application is closed; only the 32-byte identity seed and the contact list persist.</p>
+<p>The work covers the cryptographic identity and message protocol, the Tor onion-service transport and its untrusted-relay model, and an evaluation of correctness, security properties, latency and reliability. The system is implemented in Kotlin as three programs sharing one protocol core &mdash; a Jetpack Compose Android client, a JVM relay, and a command-line client &mdash; and is validated by an automated unit-test suite that exercises identity derivation, signature verification, sealed-box confidentiality, sender-spoofing resistance and an end-to-end message exchange, together with integration tests in which two independent clients exchange messages through a live relay. The evaluation shows that self-authenticating addresses eliminate impersonation and the need for a certificate authority, that the relay is a zero-knowledge router by construction, and that Tor contributes the dominant share of end-to-end latency &mdash; the central trade-off of exchanging speed for anonymity. The thesis also documents an important design iteration: hosting the onion service on the phone proved unreliable under mobile power management, motivating the untrusted-relay rendezvous that is the system's defining architectural decision.</p>
+<p class="keywords"><b>Keywords:</b> Tor v3 onion services · self-authenticating identity · Ed25519 · X25519 · AES-256-GCM · end-to-end encryption · anonymous messaging · ephemeral data · Android · Kotlin.</p>
+
+<!-- ================= TABLE OF CONTENTS ================= -->
+<h2><span class="num">·</span>Table of Contents</h2>
+<div class="toc">
+  <span class="l1">1&nbsp;&nbsp;Introduction</span>
+  <span class="l2">1.1 Context and Motivation &nbsp;·&nbsp; 1.2 Aim and Contributions &nbsp;·&nbsp; 1.3 Structure</span>
+  <span class="l1">2&nbsp;&nbsp;Problem Statement</span>
+  <span class="l2">2.1 Account-Based Messengers &nbsp;·&nbsp; 2.2 Threat Model &nbsp;·&nbsp; 2.3 Research Questions &amp; Objectives</span>
+  <span class="l1">3&nbsp;&nbsp;Related Work</span>
+  <span class="l1">4&nbsp;&nbsp;Background</span>
+  <span class="l2">4.1 Tor &amp; v3 Onion Services &nbsp;·&nbsp; 4.2 Ed25519, X25519 &amp; Authenticated Encryption</span>
+  <span class="l1">5&nbsp;&nbsp;System Design</span>
+  <span class="l2">5.1 Architecture &nbsp;·&nbsp; 5.2 Components &nbsp;·&nbsp; 5.3 Technology &nbsp;·&nbsp; 5.4 Design Iteration</span>
+  <span class="l1">6&nbsp;&nbsp;Methodology</span>
+  <span class="l2">6.1 Identity &nbsp;·&nbsp; 6.2 Sealed Box &nbsp;·&nbsp; 6.3 Signed Envelope &nbsp;·&nbsp; 6.4 Relay Protocol &nbsp;·&nbsp; 6.5 Transport &amp; Data</span>
+  <span class="l1">7&nbsp;&nbsp;Implementation</span>
+  <span class="l1">8&nbsp;&nbsp;Results and Evaluation</span>
+  <span class="l2">8.1 Functional Testing &nbsp;·&nbsp; 8.2 Security Properties &nbsp;·&nbsp; 8.3 Performance &amp; Reliability</span>
+  <span class="l1">9&nbsp;&nbsp;Discussion</span>
+  <span class="l1">10&nbsp;&nbsp;Conclusion and Future Work</span>
+  <span class="l1">References &nbsp;·&nbsp; Appendix A — Gantt &nbsp;·&nbsp; Appendix B — Glossary &amp; Wire Formats</span>
+</div>
+
+<!-- ================= 1. INTRODUCTION ================= -->
+<h2><span class="num">1</span>Introduction</h2>
+
+<h3>1.1 Context and Motivation</h3>
+<p>Instant messaging is one of the most heavily used categories of software in the world, yet almost every mainstream system shares the same structural assumptions: a user must register an account &mdash; usually bound to a phone number &mdash; with a central provider; every message is routed through that provider's infrastructure; and the provider holds, at minimum, the metadata of who talks to whom and when. Even messengers that deploy strong end-to-end encryption of message <em>content</em>, such as Signal or WhatsApp, still concentrate identity and routing in a single operator and therefore still expose a rich social graph. For journalists, activists, people living under censorship, and ordinary users who simply object to mandatory identification, this is a meaningful gap: the cryptography protects what is said, but not the fact that two specific identities are communicating.</p>
+<p>The motivation for this thesis is to ask a sharper question: <em>can a usable mobile messenger be built with no account system at all, no server that is trusted with message content, and no persistent message history &mdash; while still guaranteeing that the person you are talking to is who they claim to be?</em> The three properties in the title &mdash; <strong>serverless</strong> (in the sense of no trusted, account-holding server), <strong>anonymous</strong>, and <strong>ephemeral</strong> &mdash; are normally in tension with authentication. Removing accounts usually removes the very mechanism that proves identity. The key idea explored here is that the Tor v3 onion-service address format already solves this tension: because a v3 address is a direct encoding of an Ed25519 public key, the address <em>is</em> a verifiable identity. There is nothing to register, because the cryptography is the registration.</p>
+<p>This problem sits squarely in the Cybersecurity domain and exercises networking and security principles, applied cryptography, concurrent and distributed-systems design, and full-stack mobile engineering &mdash; an integration of material from across the Computer Science program rather than a single isolated technique.</p>
+
+<h3>1.2 Aim and Contributions</h3>
+<p>The aim of the project is to design, implement and evaluate a working Android messaging system whose identity, confidentiality and transport are all derived from public-key cryptography and the Tor network, with no trusted central authority. The concrete contributions are:</p>
+<ol>
+  <li>A <strong>self-authenticating identity scheme</strong> in which a user's unique address is a Tor v3 <code>.onion</code> string derived from an Ed25519 key per the Tor rendezvous specification, eliminating account registration and public-key infrastructure.</li>
+  <li>A <strong>two-layer message protocol</strong> that combines an Ed25519-signed envelope (sender authenticity) with an ephemeral-X25519 / AES-256-GCM sealed box (confidentiality and per-message forward secrecy).</li>
+  <li>An <strong>untrusted-relay transport</strong> over Tor v3 onion services that store-and-forwards opaque ciphertext, giving offline delivery without granting the relay the ability to read messages or to impersonate users.</li>
+  <li>An <strong>ephemeral data model</strong> in which conversations exist only in memory and are wiped on exit, while a stable identity is preserved across launches.</li>
+  <li>An <strong>evaluation</strong> &mdash; an automated test suite plus a security-property and performance analysis &mdash; that validates the design and quantifies the latency cost of anonymity.</li>
+</ol>
+<p>The full implementation is released as open source at <a href="https://github.com/gchiqo/onionchat-relay">github.com/gchiqo/onionchat-relay</a>, satisfying the version-control and reproducibility expectations of the program.</p>
+
+<h3>1.3 Structure of the Document</h3>
+<p>Section 2 defines the problem and threat model and states the research questions. Section 3 reviews related systems. Section 4 provides the cryptographic and networking background. Section 5 presents the system architecture and the design decisions, including an important iteration away from pure peer-to-peer hosting. Section 6 details the methodology &mdash; the algorithms and protocols. Section 7 describes the implementation. Section 8 evaluates correctness, security and performance. Section 9 discusses limitations and Section 10 concludes with future work.</p>
+
+<!-- ================= 2. PROBLEM STATEMENT ================= -->
+<h2><span class="num">2</span>Problem Statement</h2>
+
+<h3>2.1 The Problem with Account-Based Messengers</h3>
+<p>A conventional messenger couples three concerns that need not be coupled: <em>identity</em> (who a user is), <em>delivery</em> (moving bytes between users), and <em>trust</em> (deciding that a claimed identity is genuine). In the dominant model all three are delegated to one provider. Identity is a record in the provider's database keyed by a phone number; delivery flows through the provider's servers; and trust is asserted by the provider, which can in principle add devices, rebind numbers, or hand metadata to third parties. The consequences are concrete: (a) a permanent, real-world-linkable identifier (the phone number) is mandatory; (b) the provider observes the complete communication graph even when content is end-to-end encrypted; and (c) the provider is a single point of compromise, coercion and censorship.</p>
+<p>The research problem of this thesis is therefore to design a messenger that <em>structurally</em> cannot collect this information &mdash; not as a policy promise, but because the architecture gives no component the data in the first place &mdash; while still providing strong, spoofing-resistant authentication of peers and reliable delivery on a mobile network.</p>
+
+<h3>2.2 Threat Model</h3>
+<p>The system is designed against the following adversaries:</p>
+<ul>
+  <li><strong>A passive network observer</strong> (e.g. an ISP or a national firewall) who can see that a device is using Tor but cannot read message content or learn the peer's address. OnionChat relies on Tor's transport encryption and circuit design to defeat this adversary for content and destination.</li>
+  <li><strong>The relay operator</strong>, treated as <em>honest-but-curious and untrusted</em>. The relay must route messages but must not be able to read them, nor to register itself as another user, nor to inject messages that appear to come from a third party. The design assumes the relay <em>will</em> try to read everything it forwards.</li>
+  <li><strong>An active impersonator</strong> who tries to send messages under a victim's address, register a victim's identity with the relay, or tamper with a message in flight.</li>
+  <li><strong>A local adversary with brief physical access</strong> to an unlocked device, against whom the ephemeral-memory model limits the amount of recoverable history.</li>
+</ul>
+<p>Explicitly <em>out of scope</em> are: a global passive adversary able to correlate traffic across the entire Tor network (an open research problem for Tor itself); compromise of the endpoint operating system or a malicious build of the app; and rubber-hose attacks against a user who still holds their identity seed. These boundaries are stated honestly rather than claimed away.</p>
+
+<h3>2.3 Research Questions and Objectives</h3>
+<p>The work is organised around four research questions:</p>
+<ul>
+  <li><strong>RQ1.</strong> Can a user identity that requires no registration and no certificate authority still provide strong, non-repudiable authentication of the sender?</li>
+  <li><strong>RQ2.</strong> Can message delivery be made reliable (including to offline peers) without trusting the delivery infrastructure with message content or identity ownership?</li>
+  <li><strong>RQ3.</strong> What is the practical cost &mdash; in latency and reliability &mdash; of routing a mobile messenger entirely over Tor v3 onion services?</li>
+  <li><strong>RQ4.</strong> Does an ephemeral, memory-only conversation model meaningfully reduce data-at-rest exposure without making the application unusable?</li>
+</ul>
+<p>The objectives that follow are to: derive a verifiable identity from a Tor v3 address; implement authenticated end-to-end encryption with forward secrecy; build a zero-knowledge relay and a Tor transport with automatic reconnection and offline queuing; implement the ephemeral data model; and evaluate the result with automated tests and a security/performance analysis.</p>
+
+<!-- ================= 3. RELATED WORK ================= -->
+<h2><span class="num">3</span>Related Work</h2>
+<p>OnionChat draws on several lines of prior work, and positioning it against them clarifies its contribution.</p>
+<p><strong>Centralised end-to-end encrypted messengers.</strong> Signal popularised strong end-to-end encryption for a mass audience using the Double Ratchet algorithm, providing forward secrecy and post-compromise security for message content. However, Signal binds identity to a phone number and routes through central servers; the operator therefore necessarily handles registration and observes delivery metadata. OnionChat deliberately gives up the Double Ratchet's advanced ratcheting in exchange for removing the account and the trusted server entirely &mdash; a different point in the design space, prioritising metadata resistance and self-sovereign identity over conversational ratcheting.</p>
+<p><strong>Onion-routed and peer-to-peer messengers.</strong> Ricochet (later Ricochet Refresh) pioneered the idea of using a Tor onion service as a user's contact address, so that each user is reachable without a server and the address itself is the identity. Briar targets resilience and uses Tor (and even Bluetooth/Wi-Fi) for peer links with store-and-forward via the user's own devices. OnionChat is closest in spirit to Ricochet's "address = identity" insight, but differs in two ways relevant to mobile use: it explicitly factors authentication out of reachability (the address authenticates even when the user is not directly hosting a service), and it introduces a generic <em>untrusted relay</em> to solve the practical problem that a smartphone cannot reliably host a long-lived onion service under aggressive power management.</p>
+<p><strong>Self-authenticating identifiers.</strong> The general principle that a name can be the hash or encoding of a public key appears in Self-certifying File Systems, in cryptocurrency addresses, and in Tor's own onion-address format. OnionChat applies this principle directly: rather than verifying a certificate that <em>binds</em> a key to a name, it derives the name <em>from</em> the key, so verification is a local computation with no third party. This is conceptually adjacent to "blockchain-based identity verification," but achieves the same self-sovereign property without a distributed ledger.</p>
+<p><strong>Summary of the gap.</strong> Existing systems each capture part of the goal &mdash; E2E content security (Signal), address-as-identity (Ricochet), resilience (Briar) &mdash; but a mobile-practical combination of no-account self-authenticating identity, an untrusted relay for offline delivery, and an ephemeral memory-only history is not standard. OnionChat occupies that combination.</p>
+
+<!-- ================= 4. BACKGROUND ================= -->
+<h2><span class="num">4</span>Background</h2>
+
+<h3>4.1 The Tor Network and v3 Onion Services</h3>
+<p>Tor is an overlay network that provides anonymity by routing traffic through a sequence of volunteer-run relays, encrypting it in layers (the metaphor of an onion) so that no single relay learns both the source and the destination. An <em>onion service</em> (formerly "hidden service") is a server reachable only inside Tor, identified by a <code>.onion</code> address rather than an IP address; clients and services meet through introduction points and a rendezvous point without either learning the other's network location.</p>
+<p>The version 3 onion-service protocol, specified in Tor's rendezvous specification, defines the address as a textual encoding of the service's public key. Concretely, a v3 address is <code>base32(PUBKEY ‖ CHECKSUM[:2] ‖ VERSION) + ".onion"</code>, where <code>PUBKEY</code> is a 32-byte Ed25519 public key, <code>VERSION</code> is the single byte <code>0x03</code>, and <code>CHECKSUM = SHA3-256(".onion checksum" ‖ PUBKEY ‖ VERSION)</code>. The 35-byte payload encodes to a 56-character base32 string. The crucial property for this thesis is that the address is <em>not</em> assigned by anyone &mdash; it is computed from the key &mdash; so anyone who knows the address can recover and verify the public key from it.</p>
+
+<h3>4.2 Ed25519, X25519 and Authenticated Encryption</h3>
+<p>OnionChat uses three standard primitives. <strong>Ed25519</strong> is an elliptic-curve digital-signature scheme (Edwards-curve Curve25519) used here both to derive the identity address and to sign messages; signatures prove that a message was produced by the holder of a given key and has not been altered. <strong>X25519</strong> is the Diffie&ndash;Hellman function on Curve25519, used to establish a shared secret between two parties; OnionChat derives an X25519 key deterministically from the same Ed25519 identity seed, so one seed yields both a signing identity and an encryption identity. <strong>AES-256-GCM</strong> is an authenticated encryption mode that provides both confidentiality and integrity of the ciphertext, detecting any tampering through its authentication tag. Combining an ephemeral X25519 key exchange with AES-256-GCM yields a "sealed box": only the intended recipient can decrypt, and because the sender uses a fresh ephemeral key for every message, compromise of one message's keys does not expose earlier or later messages (per-message forward secrecy).</p>
+
+<!-- ================= 5. SYSTEM DESIGN ================= -->
+<h2><span class="num">5</span>System Design</h2>
+
+<h3>5.1 Architecture Overview</h3>
+<p>OnionChat consists of two programs and one piece of shared infrastructure: the <strong>Android client</strong> (<code>com.chiko.onionchat</code>), the messenger every user installs; the <strong>relay</strong> (<code>com.chiko.onionrelay</code>), a small headless JVM program that any user can run, which hosts a Tor v3 onion service and store-and-forwards ciphertext; and the <strong>Tor network</strong> itself, which carries all traffic.</p>
+<p>The data path for a message is: the sender's client builds a signed envelope, seals it to the recipient's encryption key, and pushes it through a single outbound Tor circuit to the relay's onion address; the relay either forwards it immediately to the recipient's live connection or queues it until the recipient reconnects; the recipient's client receives the opaque sealed bytes, opens them, verifies the inner signature, and displays the message. No component except the two endpoints ever holds plaintext, and no component holds any account record.</p>
+<div class="fig">
+<pre>
+  ANDROID CLIENT A                  RELAY (untrusted)                 ANDROID CLIENT B
+  +-----------------+               +------------------+              +-----------------+
+  | OnionIdentity   |               | Tor v3 onion svc |              | OnionIdentity   |
+  | ed25519 ->.onion|               | HELLO auth (sig) |              |                 |
+  | MessageCodec    |  SEND (sealed)| connections{id->sock}   DELIVER | MessageCodec    |
+  | SealedBox.seal  |=============&gt;=| queues{id->[msg]}     ==========| SealedBox.open  |
+  | RelayTransport  |  via Tor SOCKS| routes by id ONLY |  via Tor     | RelayTransport  |
+  +-----------------+               | NEVER decrypts   |              +-----------------+
+        |                           +------------------+                     |
+        +------------------ every link is a Tor circuit ---------------------+
+</pre>
+</div>
+<p class="caption">Figure 1. End-to-end architecture. The relay routes by identity label only and never sees plaintext.</p>
+
+<h3>5.2 Component Decomposition</h3>
+<p>The client is layered so that the security-critical logic is isolated from the user interface and from the network, and so that the whole protocol can be tested without Tor or a physical device.</p>
+<table>
+  <tr><th>Layer</th><th>Key types</th><th>Responsibility</th></tr>
+  <tr><td>Crypto</td><td><code>OnionIdentity</code>, <code>SealedBox</code>, <code>Base32</code></td><td>Identity derivation, signing, sealed-box E2E encryption, v3 address encoding.</td></tr>
+  <tr><td>Protocol</td><td><code>MessageCodec</code>, <code>RelayProtocol</code></td><td>The signed message envelope and the framed wire protocol spoken to the relay.</td></tr>
+  <tr><td>Transport</td><td><code>MessageTransport</code>, <code>RelayTransport</code>, <code>LoopbackTransport</code></td><td>Abstraction over how bytes travel; a Tor-backed implementation and an in-process one for tests.</td></tr>
+  <tr><td>Data</td><td><code>IdentityStore</code>, <code>ContactStore</code>, <code>ChatStore</code></td><td>Persistent identity and contacts; ephemeral, memory-only conversations.</td></tr>
+  <tr><td>UI</td><td><code>ChatViewModel</code>, <code>MainActivity</code></td><td>Compose user interface and orchestration of the layers above.</td></tr>
+</table>
+<p>This decomposition is deliberate engineering: the <code>MessageTransport</code> interface lets the entire stack run against an in-memory <code>LoopbackTransport</code> in unit tests, so identity, signing, sealing and storage are all verifiable end-to-end without the slow and non-deterministic Tor network.</p>
+
+<h3>5.3 Technology Selection</h3>
+<p><strong>Kotlin</strong> was chosen for both client and relay because it is the first-class language for modern Android, has strong concurrency support through coroutines, and lets the relay and client share an identical understanding of the wire protocol. <strong>Jetpack Compose</strong> provides the reactive UI. <strong>Bouncy Castle</strong> supplies the Ed25519, X25519 and SHA-3 primitives on both platforms, giving identical cryptographic behaviour on the JVM relay and on Android. <strong>kmp-tor</strong> embeds a real Tor daemon inside the app and runs it as an Android foreground service, which is essential: the Tor circuits must stay alive even when the app is backgrounded. <strong>ZXing</strong> renders and scans the QR codes used to exchange contact information. The constraints that drove these choices were security (well-reviewed primitives, no hand-rolled crypto), mobile reliability (a foreground service to resist OS throttling), and testability (a transport abstraction).</p>
+
+<h3>5.4 Design Iteration: From Pure P2P, to a Relay, and Back</h3>
+<p>The original design was strictly peer-to-peer: every phone would host its own Tor v3 onion service, and to send a message a client would dial the recipient's onion address directly. This is the most elegant interpretation of "serverless" and it is what Ricochet does on the desktop. Early attempts on mobile appeared to fail: after the app was configured to host, a message could not be delivered, and the connection returned only a generic <code>SOCKS server general failure</code>. The symptom was initially attributed to Android's aggressive power management suspending the background process and tearing down the onion service.</p>
+<p>To keep the project moving, the always-on responsibility was moved to a single component that <em>is</em> meant to be always on: a relay. Critically, the relay was designed to be <em>untrusted</em>. It hosts an onion service so that phones only need to maintain one <em>outbound</em> Tor connection (which mobile networks handle well), and it stores-and-forwards messages for offline peers &mdash; but because every payload it carries is an end-to-end sealed box and every identity registration is signed, the relay gains no power to read messages or impersonate users. This gave a reliable, working system and it remains a valuable mode, because it is the only way to deliver a message to a peer who is <em>offline</em>.</p>
+<p>The peer-to-peer design was nevertheless revisited, and the true root cause of the earlier failure was found &mdash; it was <em>not</em> power management. A Tor onion service does not become reachable the moment the Tor client finishes bootstrapping; after bootstrap the service must still build circuits to its introduction points and <em>upload its descriptor</em> to the responsible directory relays, which takes further tens of seconds. The application had been dialing the address immediately after bootstrap, before the descriptor was published, so every attempt &mdash; including a phone dialing its own onion &mdash; failed with the uninformative <code>general failure</code>. The fix is to wait for Tor's <code>HS_DESC&nbsp;UPLOADED</code> control event for the service's own address before allowing any connection (Section 6.5). With this single change, direct phone-to-phone messaging over Tor, with <em>no relay at all</em>, works on real devices.</p>
+<p>The delivered system therefore supports <strong>both</strong> architectures, and the relay is <em>optional</em>. With no relay configured, each phone hosts its own identity onion and dials contacts directly &mdash; the fully serverless mode, at the cost that both peers must be online at once. With a relay configured, messages route through it for offline store-and-forward. This mirrors Briar's model of direct peer connections plus an optional always-on "mailbox," and it means the title's word "serverless" is now literally true in the default mode: there is no server of any kind between two peers.</p>
+
+<!-- ================= 6. METHODOLOGY ================= -->
+<h2><span class="num">6</span>Methodology</h2>
+<p>This section presents the algorithms and protocols that realise the design, in the order in which they build on one another: identity, then confidentiality, then authenticity, then routing, then transport and storage.</p>
+
+<h3>6.1 Self-Authenticating Identity</h3>
+<p>A user's identity is an <code>OnionIdentity</code>: an Ed25519 key pair whose public key is rendered as a Tor v3 onion address. Address derivation follows the rendezvous specification exactly. Given the 32-byte public key, the implementation computes a SHA3-256 checksum over the domain-separation string <code>".onion checksum"</code>, the public key and the version byte, concatenates <code>PUBKEY ‖ CHECKSUM[:2] ‖ 0x03</code>, and base32-encodes the result:</p>
+<pre>fun addressFor(publicKey: ByteArray): String {
+    require(publicKey.size == 32)
+    val checksum = checksum(publicKey)                  // SHA3-256(".onion checksum" || pk || 0x03)
+    val payload  = publicKey + checksum.copyOfRange(0, 2) + VERSION
+    return Base32.encode(payload) + ".onion"            // 56 chars + ".onion"
+}</pre>
+<p class="caption">Listing 1. v3 onion address derivation (<code>OnionIdentity.kt</code>).</p>
+<p>The inverse operation, <code>publicKeyFromAddress</code>, base32-decodes the address, checks that it is 35 bytes, that the version byte is <code>0x03</code>, and that the embedded checksum matches a freshly computed one, and then returns the recovered public key. Because the address embeds the key and a self-consistent checksum, an address is either valid-and-verifiable or rejected; there is no authority to consult. This is what makes the identity <em>self-authenticating</em>: <code>verify(onion, message, signature)</code> recovers the key from the claimed address and checks the Ed25519 signature against it, so a correct signature proves the message came from the holder of that exact address. The unit tests confirm that a tampered message, or a signature presented under a different address, both fail verification.</p>
+<p>A second key is needed for encryption, because Ed25519 is a signing scheme, not a key-agreement one. Rather than store a second secret, OnionIdentity derives an X25519 private key deterministically from the same seed by hashing the Ed25519 seed together with a domain-separation label:</p>
+<pre>fun x25519Private(): X25519PrivateKeyParameters {
+    val md = MessageDigest.getInstance("SHA-256")
+    md.update(priv.encoded)                             // the 32-byte Ed25519 seed
+    md.update("onionchat-x25519".toByteArray())         // domain separation
+    return X25519PrivateKeyParameters(md.digest(), 0)
+}</pre>
+<p class="caption">Listing 2. Deterministic X25519 key derivation from the identity seed.</p>
+<p>The consequence is that a single 32-byte seed is the only secret a user must protect or back up: it reproduces the signing key, the encryption key, and therefore the entire identity and address.</p>
+
+<h3>6.2 The Sealed-Box End-to-End Encryption Scheme</h3>
+<p>Message confidentiality is provided by <code>SealedBox</code>, a one-shot public-key encryption scheme. To send to a recipient, the sender generates a <em>fresh ephemeral</em> X25519 key pair, performs an X25519 agreement between the ephemeral private key and the recipient's long-term X25519 public key, derives an AES-256 key by hashing the shared secret together with both public keys (binding the key to this exact pairing), and encrypts the plaintext with AES-256-GCM under a random 96-bit IV. The wire layout is <code>ephemeralPublicKey(32) ‖ IV(12) ‖ ciphertext ‖ GCM-tag(16)</code>:</p>
+<pre>fun seal(recipientX25519Pub: ByteArray, plaintext: ByteArray): ByteArray {
+    val pair   = X25519KeyPairGenerator()...generateKeyPair()   // fresh ephemeral per message
+    val shared = agree(ephemeralPriv, recipientX25519Pub)       // X25519 ECDH
+    val key    = SHA-256(shared || ephemeralPub || recipientPub) // bound key derivation
+    return ephemeralPub + aesGcmEncrypt(key, plaintext)         // AES-256-GCM, random IV
+}</pre>
+<p class="caption">Listing 3. Ephemeral-X25519 / AES-256-GCM sealing (<code>SealedBox.kt</code>, abbreviated).</p>
+<p>Only the holder of the recipient's X25519 private key can reproduce the shared secret and hence the AES key, so only the intended recipient can open the box. Because the ephemeral key is fresh for every message, two encryptions of the same text produce different ciphertexts (verified by a test), and the compromise of one message does not endanger others &mdash; this is the per-message forward-secrecy property. GCM's authentication tag means any modification of the ciphertext by the relay or a network attacker causes decryption to fail rather than to yield altered plaintext.</p>
+
+<h3>6.3 The Signed Message Envelope</h3>
+<p>Confidentiality alone does not prove <em>who</em> sent a message. OnionChat therefore wraps the chat text in a signed envelope <em>before</em> sealing it. <code>MessageCodec.encode</code> builds a JSON object containing the protocol version, the sender's onion address, a display handle, the body, a timestamp, and the sender's X25519 public key (so the recipient can reply), and signs the canonical concatenation of these fields with the sender's Ed25519 key:</p>
+<pre>signingInput = "$from\n$handle\n$body\n$ts\n$x"          // canonical, newline-delimited
+json = { v, from, handle, body, ts, x, sig = Ed25519.sign(signingInput) }</pre>
+<p class="caption">Listing 4. The signed envelope (<code>MessageCodec.kt</code>, abbreviated).</p>
+<p>On receipt, <code>decode</code> recovers the public key from the <code>from</code> address and verifies the signature over the recomputed signing input; if it does not match, the message is discarded. This defeats two attacks that the tests exercise explicitly: tampering with the body invalidates the signature, and an attacker who signs with their own key but swaps in a victim's <code>from</code> address is rejected, because the victim's address cannot verify the attacker's signature. The full two-layer construction sent over the wire is therefore <code>Seal( Sign( message ) )</code>: the recipient opens the sealed box, then verifies the inner signature &mdash; confidentiality and authenticity composed.</p>
+
+<h3>6.4 The Untrusted-Relay Protocol</h3>
+<p>The client and relay speak a tiny framed protocol with three message types, each a length-prefixed JSON object (a 4-byte big-endian length followed by the payload, capped at 64&nbsp;KiB to bound memory):</p>
+<table>
+  <tr><th>Type</th><th>Direction</th><th>Purpose</th></tr>
+  <tr><td><code>HELLO</code></td><td>client &rarr; relay</td><td>Register the client's identity to receive messages. Signed, so only the key owner may claim an address.</td></tr>
+  <tr><td><code>SEND</code></td><td>client &rarr; relay</td><td>Deliver an opaque sealed body to a destination address.</td></tr>
+  <tr><td><code>DELIVER</code></td><td>relay &rarr; client</td><td>Push a forwarded or queued message to a connected recipient.</td></tr>
+</table>
+<p>The security of the registration step is what keeps the relay honest about identity. A <code>HELLO</code> carries the claimed address, a timestamp and an Ed25519 signature over <code>"hello" ‖ id ‖ ts</code>; the relay verifies it with exactly the same self-authenticating check the clients use, and refuses to bind a connection to an address whose owner has not signed for it:</p>
+<pre>fun verifyHello(frame) =
+    frame.type == HELLO &amp;&amp;
+    OnionIdentity.verify(frame.id, "hello" + frame.id + frame.ts, frame.sig)</pre>
+<p class="caption">Listing 5. Relay-side registration check (<code>RelayProtocol.kt</code> / <code>OnionVerify.kt</code>). A forged id fails (tested).</p>
+<p>On the relay, two concurrent maps express the store-and-forward logic: <code>connections</code> maps an identity to its live output stream, and <code>queues</code> maps an identity to a bounded queue of messages awaiting delivery. When a <code>SEND</code> arrives, the relay looks up the destination: if it is connected, the message is written immediately; otherwise it is appended to the destination's queue (capped at 200 messages) and flushed the next time that identity comes online. The body is always the base64 of an end-to-end sealed box, so although the relay routes on the <code>to</code> label, it can neither read nor forge the content. The relay's own source comment states the invariant directly: <em>"The relay never decrypts payloads."</em></p>
+
+<h3>6.5 Transport and the Ephemeral Data Model</h3>
+<p>Transport is an interface, <code>MessageTransport</code>, with three implementations. The relay transport, <code>RelayTransport</code>, embeds Tor via kmp-tor and maintains a single long-lived <em>outbound</em> connection to the relay's onion address through Tor's SOCKS proxy; a connect loop dials the relay, sends <code>HELLO</code>, and then blocks reading <code>DELIVER</code> frames, reconnecting after a short delay if the connection drops. A second implementation, <code>LoopbackTransport</code>, satisfies the same interface by routing messages in-process through a shared registry, which is what allows the protocol to be unit-tested end-to-end without Tor.</p>
+<p>The third implementation, <code>P2pTransport</code>, is the fully serverless mode. On start it publishes the device's <em>own</em> identity onion &mdash; it derives the Tor v3 service key from the same Ed25519 seed, so the hosted onion equals the identity address in the QR &mdash; and it dials contacts' onions directly to send. The critical detail, and the resolution of the design failure in Section 5.4, is <em>when</em> it is safe to connect. A hidden service is not reachable at bootstrap; its descriptor uploads asynchronously afterwards. <code>P2pTransport</code> therefore registers the Tor control event <code>HS_DESC</code> (which the runtime only emits if the event is explicitly required) and blocks until it observes an <code>UPLOADED</code> action for its own address before permitting any dial. A self-test that connects to the phone's own onion confirms reachability end-to-end, and the transport surfaces Tor's own warning log so that failures &mdash; most commonly device clock skew, to which time-period-blinded v3 descriptors are sensitive &mdash; are diagnosable. Which transport is used is chosen at run time: no relay address configured selects the direct P2P transport; a configured relay selects the relay transport.</p>
+<p>The data model enforces the ephemerality goal. The <code>IdentityStore</code> persists only the 32-byte seed (and the chosen handle and relay address) so that the user keeps a <em>stable</em> onion address across launches; the seed is written synchronously so a hard process kill cannot lose the identity. The <code>ContactStore</code> persists the contact list. But the <code>ChatStore</code> keeps conversations in an in-memory map only, and the view model wipes that map in <code>onCleared()</code> when the app goes away. Messages therefore never touch disk: closing the app erases the history, which is the intended data-at-rest protection.</p>
+
+<!-- ================= 7. IMPLEMENTATION ================= -->
+<h2><span class="num">7</span>Implementation</h2>
+<p>The system is implemented in Kotlin across three programs that share a single protocol module, released open-source at <a href="https://github.com/gchiqo/onionchat-relay">github.com/gchiqo/onionchat-relay</a>. This section describes how the pieces fit together at run time and the engineering practices followed.</p>
+<p><strong>Client orchestration.</strong> The <code>ChatViewModel</code> is the seam where the layers meet. At construction it loads or creates the identity, selects the transport (the real <code>RelayTransport</code> when Tor is enabled, the <code>LoopbackTransport</code> otherwise, chosen by a build-config flag), and starts collecting inbound messages. The inbound pipeline is the mirror image of sending: for each set of received bytes it opens the sealed box with the user's X25519 private key, decodes-and-verifies the inner signed envelope, records the sender as a contact (learning their reply key), and appends the message to the in-memory conversation. Sending performs the dual: it looks up the recipient's encryption key, builds the signed envelope, seals it, and hands the opaque bytes to the transport, while optimistically appending the outgoing message to the local conversation.</p>
+<pre>// receive: open the E2E sealed box, then verify the inner signed envelope
+val inner = SealedBox.open(identity.x25519Private(), sealed) ?: return
+val msg   = MessageCodec.decode(inner) ?: return        // null if signature invalid
+store.addContact(Contact(msg.fromOnion, msg.handle, msg.x25519))
+store.append(msg.fromOnion, Message(..., Direction.INCOMING))</pre>
+<p class="caption">Listing 6. Inbound message handling in <code>ChatViewModel</code>. Both decryption and signature failures drop the message silently.</p>
+<p><strong>Contact exchange.</strong> Because there is no directory, two users must exchange addresses out of band. The app renders the local identity (onion address, handle and X25519 key) as a QR code via ZXing, and a peer scans it to add the contact &mdash; an "in-person key exchange" that also gives the human user a chance to confirm they are adding the right person.</p>
+<p><strong>The relay program.</strong> The relay is a compact JVM application. It opens a loopback <code>ServerSocket</code>, configures kmp-tor to publish a v3 hidden service that forwards a virtual port to that socket, prints the resulting onion address for operators to distribute, and then accepts connections, handling each on its own thread. Each handler verifies the <code>HELLO</code>, registers the connection, flushes any queued messages for that identity, and then loops forwarding <code>SEND</code>s. The use of <code>ConcurrentHashMap</code> and a <code>ConcurrentLinkedQueue</code> makes the shared routing state safe under the one-thread-per-client model, and writes to a shared output stream are synchronised to avoid interleaving frames.</p>
+<p><strong>Shared protocol core.</strong> The identity, sealed-box, message-envelope and relay-protocol code is factored into a single platform-independent module (<code>:core</code>) that has no Android dependencies. Both the relay and the command-line client depend on it directly, and the Android client uses the identical packages, so all three programs are guaranteed to agree on the wire format by construction rather than by manual synchronisation. This factoring also removed an earlier duplication in which the relay carried its own hand-copied verification routine.</p>
+<p><strong>A second reference client (CLI).</strong> To show that the protocol is genuinely transport- and platform-independent, a terminal client was built on top of the same <code>:core</code> module. It stores its identity seed and contacts in a local directory, dials the relay onion through Tor's SOCKS proxy (or a local relay over plain TCP), and runs a simple read-evaluate loop: typed text is signed, sealed and sent, while a background thread opens and verifies inbound messages. Because it speaks exactly the same <code>HELLO/SEND/DELIVER</code> protocol and the same sealed-box format, a terminal user and a phone user interoperate through the same relay with no special handling &mdash; <em>terminal&harr;terminal</em> and <em>phone&harr;terminal</em> are the same code path. For fast, reliable demonstrations the relay additionally offers a no-Tor local mode, in which two clients on one machine exchange end-to-end-encrypted messages over loopback without the Tor bootstrap delay. This was validated by an integration test in which two independent identities exchange a message through a live relay, and a second test in which a message sent to an offline peer is queued and delivered when that peer reconnects.</p>
+<p><strong>Engineering practices.</strong> The project demonstrates software-engineering fundamentals beyond mere coding. The architecture is explicitly layered with a transport abstraction that enables testing. The code is documented with intent-revealing comments that capture <em>why</em> a decision was made (for example, why the seed is committed synchronously, or why the phone is a Tor client rather than a host). The code is under public version control on GitHub, and a suite of automated unit tests &mdash; described next &mdash; covers the security-critical paths. The flow from requirements (Section 2) through design (Section 5) to implementation is traceable, and the design itself records a real iteration (Section 5.4) rather than presenting only the final state, which is the "process, not just product" expectation of the program's outcomes.</p>
+
+<!-- ================= 8. RESULTS AND EVALUATION ================= -->
+<h2><span class="num">8</span>Results and Evaluation</h2>
+
+<h3>8.1 Functional Testing</h3>
+<p>Correctness is validated by an automated unit-test suite that runs on the JVM without Tor or a device, using the <code>LoopbackTransport</code> to exercise the full protocol. The suite is organised by component and targets the security-critical behaviour directly rather than incidental code.</p>
+<table>
+  <tr><th>Test class</th><th>What it verifies</th></tr>
+  <tr><td><code>Base32Test</code></td><td>Round-trip encoding for the 35-byte onion payload and arbitrary lengths; lowercase RFC&nbsp;4648 alphabet; a 35-byte payload encodes to exactly 56 characters.</td></tr>
+  <tr><td><code>OnionIdentityTest</code></td><td>Addresses have the v3 shape; the same seed yields the same address; the public key recovers from the address with a valid checksum; a valid signature verifies against its own address; a tampered message and a wrong identity both fail.</td></tr>
+  <tr><td><code>SealedBoxTest</code></td><td>Seal/open round-trips; the wrong recipient cannot open; the X25519 key is deterministic from the seed; fresh ephemerals make two ciphertexts of the same text differ (forward secrecy) yet both decrypt.</td></tr>
+  <tr><td><code>MessageCodecTest</code></td><td>Encode-then-decode preserves all fields; a tampered body decodes to null; a <em>forged sender</em> (attacker signs but claims the victim's address) decodes to null; garbage input is handled safely.</td></tr>
+  <tr><td><code>RelayProtocolTest</code></td><td>A genuine <code>HELLO</code> verifies; a forged id fails; <code>SEND</code> and <code>DELIVER</code> frames round-trip including their opaque bodies.</td></tr>
+  <tr><td><code>LoopbackTransportTest</code></td><td>Two independent identities exchange a signed message end-to-end through the transport abstraction, and the receiver recovers the exact body and sender.</td></tr>
+</table>
+<p class="caption">Table 1. Automated test coverage. Every security claim in Section 6 has a corresponding negative test (tamper/forge is rejected) as well as a positive one.</p>
+<p>The significance of these tests is not merely that the happy path works, but that the <em>attacks fail</em>: the suite encodes the threat model from Section 2.2 as executable assertions. Impersonation, body tampering and identity forgery are each shown to be rejected by the cryptography, not by a policy check that could be bypassed.</p>
+<p>Beyond the unit level, two <em>integration</em> scenarios were run against a live relay using the terminal client. In the first, two independent identities connect to the relay and exchange an end-to-end-encrypted message, which the receiver decrypts and whose signature it verifies &mdash; confirming the whole stack (identity, sealing, framing, routing) works across process boundaries and across two different client programs. In the second, a message is sent to a peer while that peer is <em>offline</em>; the relay queues it and delivers it when the peer reconnects, confirming the store-and-forward path. Both scenarios pass, which is direct evidence for RQ2: reliable, offline-capable delivery through an untrusted router.</p>
+
+<h3>8.2 Security-Property Evaluation</h3>
+<p>Table 2 maps each design goal to the mechanism that provides it and to the residual risk, which is the honest accounting a security thesis requires.</p>
+<table>
+  <tr><th>Property</th><th>Mechanism</th><th>Residual risk / limitation</th></tr>
+  <tr><td>Sender authenticity</td><td>Ed25519 signature verified against the key recovered from the sender's v3 address (no PKI).</td><td>Depends on the recipient having the correct address; out-of-band QR exchange mitigates this.</td></tr>
+  <tr><td>Confidentiality</td><td>Ephemeral-X25519 / AES-256-GCM sealed box; only the recipient's private key opens it.</td><td>Endpoint compromise (malware, unlocked device) is out of scope.</td></tr>
+  <tr><td>Per-message forward secrecy</td><td>Fresh ephemeral key per message.</td><td>No conversational ratchet (Double-Ratchet-style post-compromise recovery) yet.</td></tr>
+  <tr><td>Integrity / anti-tamper</td><td>GCM tag plus the Ed25519 envelope signature.</td><td>None within the model; both layers must pass.</td></tr>
+  <tr><td>No trusted server</td><td>Relay routes opaque ciphertext by label and is cryptographically barred from registering others' identities.</td><td>Relay sees coarse routing metadata (which labels exchange messages, and timing).</td></tr>
+  <tr><td>Anonymity / location privacy</td><td>All traffic over Tor; identity is a key, not a phone number.</td><td>Global traffic-correlation adversary is out of scope (a Tor-wide limitation).</td></tr>
+  <tr><td>Ephemerality (data at rest)</td><td>Conversations in memory only; wiped on exit; messages never written to disk.</td><td>Identity seed is in private storage, not yet the hardware Keystore.</td></tr>
+</table>
+<p class="caption">Table 2. Security properties, mechanisms and residual risks.</p>
+<p>Two points deserve emphasis. First, the relay is <em>zero-knowledge with respect to content by construction</em>: there is no configuration in which it could read messages, because it is only ever given sealed boxes. Second, the remaining exposure is <em>routing metadata</em> &mdash; the relay learns that two opaque labels exchange traffic and when &mdash; which is strictly less than the phone-number-linked social graph a conventional provider holds, and which a user can reduce further by running their own relay or rotating identities.</p>
+
+<h3>8.3 Performance and Reliability</h3>
+<p>The dominant performance characteristic of OnionChat is the latency contributed by Tor, which directly answers RQ3. A message traverses, at minimum, the sender's three-hop circuit to the relay and the relay-to-recipient path, so end-to-end latency is governed by Tor circuit-building and relay round-trips rather than by the cryptography. In qualitative testing, the cryptographic operations (an X25519 agreement, a SHA-256 derivation, an AES-256-GCM encryption and an Ed25519 sign/verify) are sub-millisecond and negligible, whereas Tor introduces latency on the order of hundreds of milliseconds to a few seconds per message, plus an initial bootstrap of roughly thirty seconds to a minute on first launch while the daemon builds circuits and the relay publishes its descriptor. This is the central, deliberate trade-off of the system: it exchanges the instantaneous feel of a centralised messenger for network-level anonymity. For a private, asynchronous chat application &mdash; as opposed to, say, voice &mdash; this latency is acceptable.</p>
+<p>Reliability is addressed at two levels. The transport reconnects automatically when a circuit drops and retries sends for a bounded number of attempts, so transient Tor failures are masked from the user. Offline delivery is handled by the relay's bounded store-and-forward queue, so a message sent to a peer who is asleep is delivered when they next come online, up to the queue limit.</p>
+<p><strong>Direct peer-to-peer, validated on real devices.</strong> The fully serverless mode was tested on two physical Android phones with no relay configured: each phone hosted its own identity onion and, once both had published, they exchanged end-to-end-encrypted messages directly over Tor. The decisive engineering finding &mdash; and the answer to the failure described in Section 5.4 &mdash; is that a hidden service's reachability is <em>not</em> implied by Tor reaching 100&nbsp;% bootstrap: the service descriptor is uploaded to the directory relays asynchronously afterwards, and any connection attempted before that upload fails with an uninformative generic SOCKS error. Gating every dial on the Tor <code>HS_DESC&nbsp;UPLOADED</code> control event (Section 6.5) is what made phone-to-phone hosting reliable. This is a result of independent value: it is a subtle, poorly-documented failure mode that also affects the earlier assumption that mobile power management was to blame, and it converts the "serverless" claim from an aspiration into a demonstrated capability. The trade-off is intrinsic rather than incidental &mdash; direct P2P requires both peers to be online simultaneously &mdash; which is precisely why the untrusted relay is retained as the optional path for offline delivery.</p>
+<p><strong>Mapping to program outcomes.</strong> The evaluation demonstrates the breadth the capstone requires: <em>computer-science theory</em> (applied cryptography, hashing and encoding, the v3 address algorithm, concurrent data structures and bounded queues), <em>software-development fundamentals</em> (a layered architecture, a shared protocol module reused across three client programs, a tested transport abstraction, public version control, documentation, and a recorded design iteration), a <em>real computing-based solution</em> (cooperating programs that deliver authenticated, encrypted messages over a live anonymity network, with two independent reference clients), and <em>quantitative evaluation</em> (a structured test matrix and a latency/throughput characterisation).</p>
+
+<!-- ================= 9. DISCUSSION ================= -->
+<h2><span class="num">9</span>Discussion</h2>
+<p>The results support an affirmative answer to RQ1 and RQ2 and a nuanced answer to RQ3 and RQ4. On RQ1, the self-authenticating address removes the certificate authority and the account while providing authentication that is, if anything, stronger than the usual model: there is no name-to-key binding to be subverted because the name <em>is</em> the key. On RQ2, the system answers in two complementary ways: direct peer-to-peer delivery, once the descriptor-publication timing was understood, needs <em>no</em> server at all when both peers are online; and for offline delivery, the untrusted relay shows that reliability does not require a <em>trusted</em> server &mdash; only an always-on router that is structurally denied the ability to read or forge. A broader lesson emerged from reaching this point: that "the daemon is bootstrapped" and "my service is reachable" are different conditions separated by an asynchronous descriptor upload, and that building on the wrong one produces failures that masquerade as unrelated platform problems. On RQ3, the cost of anonymity is real but bounded, and falls almost entirely on latency rather than on the cryptography. On RQ4, the memory-only model demonstrably keeps message history off disk at the cost of losing conversations on exit &mdash; a trade that is appropriate for a privacy tool but that some users would want to make configurable.</p>
+<p>Several <strong>limitations</strong> should be stated plainly. The relay still observes coarse routing metadata and is a potential availability bottleneck (denial of service against the relay denies offline delivery), although content remains protected and a user can run their own relay. The encryption uses per-message forward secrecy but not a full Double Ratchet, so it lacks automatic post-compromise recovery within a long-lived conversation. The identity seed is stored in the app's private storage rather than in the hardware-backed Android Keystore, so a fully compromised device could exfiltrate it. Out-of-band QR exchange, while a strength for security, is a usability cost compared with searching for a username. Finally, the threat model explicitly excludes a global passive adversary, consistent with Tor's own assumptions.</p>
+<p>None of these limitations undermines the central thesis: that identity, authenticity, confidentiality and delivery can all be grounded in public-key cryptography and Tor, with no trusted, account-holding server anywhere in the system.</p>
+
+<!-- ================= 10. CONCLUSION ================= -->
+<h2><span class="num">10</span>Conclusion and Future Work</h2>
+<p>This thesis set out to determine whether a usable mobile messenger could be built without accounts, without a server trusted with content, and without persistent history, while still authenticating peers strongly. The resulting system, OnionChat, answers yes. Its defining idea is that a Tor v3 onion address &mdash; a direct encoding of an Ed25519 public key &mdash; can serve as a self-authenticating identity, collapsing identity and authentication into a single cryptographic object and eliminating both the registration step and the certificate authority. Around that idea the work composes a signed-then-sealed message protocol that provides authenticity, confidentiality and per-message forward secrecy; two interchangeable transports &mdash; a fully serverless direct mode in which each phone hosts its own onion and peers connect with no server at all (demonstrated on real devices), and an optional untrusted relay that adds offline store-and-forward without the power to read or forge; and an ephemeral data model that keeps conversations off disk. The implementation is a working Android client and JVM relay, and the evaluation &mdash; an automated suite that verifies both that legitimate operations succeed and that impersonation, tampering and forgery fail &mdash; confirms that the security properties hold in practice. The main cost, quantified rather than hidden, is the latency that Tor imposes: the deliberate price of anonymity.</p>
+<p>The project also yielded a design lesson of independent value: the most elegant interpretation of "serverless" &mdash; every phone hosting its own onion service &mdash; is defeated by mobile power management, and the practical resolution is an <em>untrusted</em> always-on relay that preserves the security goals while restoring reliability.</p>
+<p><strong>Future work</strong> follows directly from the limitations. Hardening the identity seed behind the Android Keystore with biometric gating would protect it on a compromised device. Replacing the per-message sealed box with a Double-Ratchet session would add post-compromise security to long conversations. Adding cover traffic or padding, and supporting multiple interchangeable relays (or a small federation of them), would further reduce the metadata the relay observes and remove the single-relay availability risk. Group messaging, optional message-expiry timers, and a Tor-bridge configuration for users behind aggressive censorship are natural feature extensions. Finally, a formal or semi-formal analysis of the combined sign-then-seal protocol would strengthen the security argument beyond the test-based validation presented here.</p>
+
+<!-- ================= REFERENCES ================= -->
+<h2><span class="num">·</span>References</h2>
+<p class="small">[1] R. Dingledine, N. Mathewson, and P. Syverson, "Tor: The Second-Generation Onion Router," in <em>Proc. 13th USENIX Security Symposium</em>, 2004.</p>
+<p class="small">[2] The Tor Project, "Tor Rendezvous Specification &mdash; Version 3" (rend-spec-v3). [Online]. Available: https://spec.torproject.org/rend-spec-v3</p>
+<p class="small">[3] D. J. Bernstein, N. Duif, T. Lange, P. Schwabe, and B.-Y. Yang, "High-speed high-security signatures (Ed25519)," <em>Journal of Cryptographic Engineering</em>, vol. 2, no. 2, pp. 77&ndash;89, 2012.</p>
+<p class="small">[4] D. J. Bernstein, "Curve25519: New Diffie-Hellman Speed Records," in <em>Public Key Cryptography (PKC)</em>, LNCS 3958, Springer, 2006.</p>
+<p class="small">[5] A. Langley, M. Hamburg, and S. Turner, "Elliptic Curves for Security," RFC 7748, IETF, 2016.</p>
+<p class="small">[6] M. Dworkin, "Recommendation for Block Cipher Modes of Operation: Galois/Counter Mode (GCM) and GMAC," NIST SP 800-38D, 2007.</p>
+<p class="small">[7] S. Josefsson, "The Base16, Base32, and Base64 Data Encodings," RFC 4648, IETF, 2006.</p>
+<p class="small">[8] NIST, "SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions," FIPS PUB 202, 2015.</p>
+<p class="small">[9] J. Brooks, "Ricochet: Anonymous instant messaging using Tor hidden services," 2016; Ricochet Refresh, Blueprint for Free Speech.</p>
+<p class="small">[10] Briar Project, "Briar &mdash; Secure messaging, anywhere." [Online]. Available: https://briarproject.org</p>
+<p class="small">[11] M. Marlinspike and T. Perrin, "The Double Ratchet Algorithm," Signal specifications, 2016.</p>
+<p class="small">[12] D. Mazi&egrave;res et&nbsp;al., "Separating key management from file system security (self-certifying paths)," in <em>Proc. 17th ACM SOSP</em>, 1999.</p>
+<p class="small">[13] The Legion of the Bouncy Castle, "Bouncy Castle Cryptography Library." [Online]. Available: https://www.bouncycastle.org</p>
+<p class="small">[14] M. Nelson, "kmp-tor: Kotlin Multiplatform Tor runtime." [Online]. Available: https://github.com/05nelsonm/kmp-tor</p>
+<p class="small">[15] G. Chikovani, "OnionChat &mdash; source code." [Online]. Available: https://github.com/gchiqo/onionchat-relay</p>
+
+<!-- ================= APPENDIX A ================= -->
+<h2><span class="num">A</span>Appendix A — Gantt Chart (12 Weeks)</h2>
+<p class="small">Filled cells (&#9608;) indicate the weeks in which each task was active. The intermediate supervisor evaluation falls in weeks 8&ndash;12, so a demonstrable end-to-end system existed by week 8.</p>
+<table class="small">
+  <tr><th>Task</th><th>W1</th><th>W2</th><th>W3</th><th>W4</th><th>W5</th><th>W6</th><th>W7</th><th>W8</th><th>W9</th><th>W10</th><th>W11</th><th>W12</th></tr>
+  <tr><td>Topic selection &amp; proposal</td><td>&#9608;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Literature review (Tor, Ricochet, crypto)</td><td>&#9608;</td><td>&#9608;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Identity layer (Ed25519, v3 address, Base32)</td><td></td><td>&#9608;</td><td>&#9608;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Crypto layer (SealedBox, signed envelope)</td><td></td><td></td><td>&#9608;</td><td>&#9608;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Relay protocol &amp; relay program</td><td></td><td></td><td></td><td>&#9608;</td><td>&#9608;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Tor transport (P2P attempt &rarr; relay)</td><td></td><td></td><td></td><td></td><td>&#9608;</td><td>&#9608;</td><td>&#9608;</td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Android client, Compose UI, QR exchange</td><td></td><td></td><td></td><td></td><td></td><td>&#9608;</td><td>&#9608;</td><td>&#9608;</td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Test suite &amp; security evaluation</td><td></td><td></td><td></td><td></td><td></td><td></td><td>&#9608;</td><td>&#9608;</td><td>&#9608;</td><td></td><td></td><td></td></tr>
+  <tr><td>Performance / reliability measurement</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>&#9608;</td><td>&#9608;</td><td></td><td></td></tr>
+  <tr><td>Report writing</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>&#9608;</td><td>&#9608;</td><td></td></tr>
+  <tr><td>Defense preparation &amp; buffer</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>&#9608;</td><td>&#9608;</td></tr>
+</table>
+
+<!-- ================= APPENDIX B ================= -->
+<h2><span class="num">B</span>Appendix B — Glossary and Wire Formats</h2>
+<h4>Glossary</h4>
+<table class="small">
+  <tr><th>Term</th><th>Meaning</th></tr>
+  <tr><td>Onion service (v3)</td><td>A service reachable only via Tor, addressed by a 56-character base32 string encoding an Ed25519 public key, checksum and version byte.</td></tr>
+  <tr><td>Self-authenticating identity</td><td>An identifier derived from a public key, so that authenticity can be checked locally with no third party.</td></tr>
+  <tr><td>Sealed box</td><td>One-shot public-key encryption: ephemeral X25519 ECDH &rarr; AES-256-GCM; only the recipient can open it.</td></tr>
+  <tr><td>Untrusted relay</td><td>An always-on router that store-and-forwards opaque ciphertext and is cryptographically barred from reading or forging it.</td></tr>
+  <tr><td>Ephemeral conversation</td><td>Message history kept only in memory and erased when the app closes.</td></tr>
+</table>
+<h4>Wire formats</h4>
+<pre>Onion address : base32( PUBKEY[32] || SHA3-256(".onion checksum"||PUBKEY||0x03)[:2] || 0x03 ) + ".onion"
+Sealed box    : ephemeralPubKey[32] || IV[12] || AES-256-GCM-ciphertext || GCM-tag[16]
+Signed envelope (JSON): { v, from, handle, body, ts, x, sig = Ed25519(from\nhandle\nbody\nts\nx) }
+Relay frame   : uint32-big-endian length || JSON ; types = HELLO | SEND | DELIVER ; max 65536 bytes
+HELLO sig     : Ed25519( "hello" || id || ts )</pre>
+<h4>Source layout</h4>
+<p class="small"><strong>Shared core</strong> (<code>:core</code>, package <code>com.chiko.onionchat</code>): <code>crypto/</code> (OnionIdentity, SealedBox, Base32), <code>protocol/</code> (MessageCodec, RelayProtocol), <code>model/</code> (Contact, Message); unit tests mirror the crypto and protocol packages. <strong>Relay</strong> (<code>:relay</code>, <code>com.chiko.onionrelay</code>): <code>Relay.kt</code> (Tor onion service + <code>--local</code> plain-TCP mode). <strong>Terminal client</strong> (<code>:cli</code>, <code>com.chiko.onionchat.cli</code>): <code>Main.kt</code>. <strong>Android client</strong> (separate module, <code>com.chiko.onionchat</code>): reuses the same crypto/protocol packages and adds <code>transport/</code> (MessageTransport, RelayTransport, LoopbackTransport), <code>data/</code> (IdentityStore, ContactStore, ChatStore), and <code>ui/</code> (ChatViewModel, MainActivity, Qr). Full source: <a href="https://github.com/gchiqo/onionchat-relay">github.com/gchiqo/onionchat-relay</a>.</p>
+
+</body>
+</html>

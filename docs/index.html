@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OnionChat — docs</title>
+<style>
+  :root{--bg:#0e0b16;--card:#1a1330;--line:#2a2340;--ink:#f4f1fb;--muted:#b3aac9;--accent:#a855f7;--accent2:#7c3aed;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:radial-gradient(1000px 600px at 80% -10%,#24164a 0,transparent 55%),
+       radial-gradient(900px 600px at -10% 110%,#1a1140 0,transparent 55%),var(--bg);
+       color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Arial,"Sylfaen",sans-serif;
+       min-height:100vh;display:flex;align-items:center;justify-content:center;padding:6vh 5vw;}
+  .wrap{max-width:900px;width:100%;}
+  .brand{font-size:clamp(42px,9vw,86px);font-weight:800;letter-spacing:-2px;}
+  .brand .on{color:var(--accent);}
+  .tag{color:var(--muted);font-size:clamp(16px,2.4vw,22px);margin-top:8px;max-width:46ch;}
+  .pill{display:inline-block;margin-top:22px;background:#2a1c4d;color:#d9c8ff;border:1px solid #4a2f80;
+        padding:.4em .9em;border-radius:999px;font-family:"Consolas",monospace;font-size:14px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin-top:40px;}
+  a.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;
+         color:var(--ink);text-decoration:none;transition:.15s;}
+  a.card:hover{border-color:var(--accent);transform:translateY(-3px);}
+  .card .emoji{font-size:30px;}
+  .card h3{margin:10px 0 6px;font-size:20px;}
+  .card p{color:var(--muted);font-size:14px;line-height:1.5;}
+  .foot{margin-top:36px;color:var(--muted);font-size:14px;}
+  .foot a{color:var(--accent);text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><span class="on">Onion</span>Chat</div>
+  <div class="tag">A serverless, anonymous, ephemeral messenger over Tor v3 onion services — no accounts, no servers, no readable history.</div>
+  <div class="pill">identity = base32( ed25519_key ).onion</div>
+
+  <div class="grid">
+    <a class="card" href="OnionChat-Presentation.html">
+      <div class="emoji">🎤</div><h3>Presentation (EN)</h3>
+      <p>16 slides: normal web → Tor → the encryption illusion → Telegram/WhatsApp → OnionChat. Arrow keys to navigate.</p>
+    </a>
+    <a class="card" href="OnionChat-Presentation-KA.html">
+      <div class="emoji">🇬🇪</div><h3>პრეზენტაცია (KA)</h3>
+      <p>ქართული ვერსია — იგივე 16 სლაიდი, სრულად თარგმნილი.</p>
+    </a>
+    <a class="card" href="OnionChat-Thesis.html">
+      <div class="emoji">📄</div><h3>Bachelor's Thesis</h3>
+      <p>Full write-up: design, threat model, methodology, evaluation of the serverless P2P + untrusted-relay system.</p>
+    </a>
+    <a class="card" href="https://github.com/gchiqo/onionchat-relay/releases/latest">
+      <div class="emoji">📦</div><h3>Downloads</h3>
+      <p>Android APK · terminal client · relay — with a full how-to on the release page.</p>
+    </a>
+  </div>
+
+  <div class="foot">
+    Source: <a href="https://github.com/gchiqo/onionchat">app</a> ·
+    <a href="https://github.com/gchiqo/onionchat-relay">CLI + relay</a> &nbsp;·&nbsp;
+    Giorgi Chikovani · Georgian Technical University · 2026
+  </div>
+</div>
+</body>
+</html>
